@@ -69,4 +69,5 @@ Testing/
 .cache/
 
 .DS_Store
-.idea/*
+.idea/
+.qtcreator/
