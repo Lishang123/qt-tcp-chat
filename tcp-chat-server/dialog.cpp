@@ -60,7 +60,7 @@ void Dialog::on_btnStart_clicked()
 
 void Dialog::on_btnStop_clicked()
 {
-    m_server.close();
+    m_server.closeServer();
     ui->lblStatus->setText("Closed");
     enableBtnsStopped();
 }
