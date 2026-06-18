@@ -1,5 +1,6 @@
 #include "server.h"
 
+#include "Client.h"
 
 
 Server::Server(QObject *parent) : QTcpServer(parent)
@@ -7,80 +8,82 @@ Server::Server(QObject *parent) : QTcpServer(parent)
 
 }
 
-void Server::close()
+void Server::closeServer()
 {
-    foreach (QTcpSocket* socket, m_sockets)
+    foreach (Client* client, m_clients)
     {
-        socket->close();
+        client->getSocket()->close();
     }
-    qDeleteAll(m_sockets);
-    m_sockets.clear();
+    qDeleteAll(m_clients);
+    m_clients.clear();
+
+    // update GUI
     emit clientChanged();
     QTcpServer::close();
 }
 
 
-void Server::disconnected()
-{
-    QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
-    if(!socket) return;
+void Server::clientDisconnected() {
+    auto* client = qobject_cast<Client*>(sender());
+    if(!client) return;
 
-    m_sockets.removeAll(socket);
-    disconnect(socket, &QTcpSocket::disconnected, this, &Server::disconnected);
-    disconnect(socket, &QTcpSocket::readyRead, this, &Server::readyRead);
-    socket->deleteLater();
+    m_clients.removeAll(client);
+    disconnect(client, &Client::disconnected, this, &Server::clientDisconnected);
+    //disconnect(client, &Client::readyRead, this, &Server::broadcast);
+    client->deleteLater();
 
+    // update GUI
     emit clientChanged();
 }
 
+void Server::sendMessage(Client* client, const QByteArray& message) {
+    QMetaObject::invokeMethod(
+            client,
+            "sendMessage",
+            Qt::QueuedConnection,
+            Q_ARG(QByteArray, message)
+        );
+}
 
-
-void Server::readyRead()
+void Server::broadcast(const QByteArray& data)
 {
-    /*
-     * TODO: how about we setting a message format so that we
-     * distinguish user name, user message, etc.?
-     * So we need to parse the message according to some
-     * XML? format. And maybe react accordingly.
-     */
-    QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
-    if(!socket) return;
-
-    QByteArray data = socket->readAll();
-
+    auto client = qobject_cast<Client*>(sender());
     //Print the message for each connected client
-    foreach (QTcpSocket* socket, m_sockets)
+    for (Client* a_client : m_clients)
     {
-        socket->write(data);
+        sendMessage(a_client, data);
     }
 }
 
-
-
-void Server::incomingConnection(qintptr handle)
-{
-    /*
+/*
      * incomingConnection() is only called AFTER the TCP
      * connection has already been accepted by the OS.
      * So the socket is already connected.
-     *
-     * QTcpSocket::connected() signal is usually not useful
+     * So QTcpSocket::connected() signal is usually not useful
      * on the server side in this pattern.
     */
-    QTcpSocket *socket = new QTcpSocket();
-    if(!socket->setSocketDescriptor(handle))
-    {
-        delete socket;
-        return;
-    }
-    // add the client socket to the client list.
-    m_sockets.append(socket);
-    connect(socket, &QTcpSocket::disconnected, this, &Server::disconnected);
-    connect(socket,&QTcpSocket::readyRead, this, &Server::readyRead);
 
+void Server::incomingConnection(qintptr handle)
+{
+    // create the client in another thread
+    auto thread = new QThread(this);
+    auto client = new Client(nullptr, handle);
+    client->moveToThread(thread);
+
+    connect(thread, &QThread::started, client, &Client::start);
+    connect(client, &Client::finished, thread, &QThread::quit);
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+    thread->start();
+    // add the client socket to the client list.
+    m_clients.append(client);
+
+    connect(client, &Client::disconnected, this, &Server::clientDisconnected);
+    connect(client,&Client::dataReceived, this, &Server::broadcast);
+
+    // update GUI
     emit clientChanged();
 
-    socket->write(m_welcome_msg.toUtf8());
+    sendMessage(client,m_welcome_msg.toUtf8());
 }
 
 void Server::setWelcome_msg(const QString &newWelcome_msg)
@@ -88,8 +91,8 @@ void Server::setWelcome_msg(const QString &newWelcome_msg)
     m_welcome_msg = newWelcome_msg;
 }
 
-int Server::getClientsCount()
+size_t Server::getClientsCount()
 {
-    return m_sockets.count();
+    return m_clients.count();
 }
 

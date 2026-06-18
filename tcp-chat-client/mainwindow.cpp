@@ -59,11 +59,11 @@ void MainWindow::on_btnConnect_clicked()
     //disable all buttons so that the user doesn't click anything in between
     disableAllBtns();
 
-    //asychronous call to connect to the host
+    //asynchronous call to connect to the host
     m_socket.connectToHost(ui->textServer->text(), port);
 
     // check if connected, force synchronous waiting.
-    // unncessary since the socket will emit error if connection failed.
+    // unnecessary since the socket will emit error if connection failed.
     // if(!m_socket.waitForConnected(3000)){
     //     on_btnDisconnect_clicked();
     //     QMessageBox::critical(this, "Error", "Cannot connect to the server!");

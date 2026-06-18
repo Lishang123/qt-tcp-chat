@@ -3,6 +3,10 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QList>
+#include <QDebug>
+#include <QThread>
+
+#include "Client.h"
 
 class Server : public QTcpServer
 {
@@ -12,23 +16,25 @@ public:
 
     void setWelcome_msg(const QString &newWelcome_msg);
 
-    int getClientsCount();
+    size_t getClientsCount();
 
-    void close();
+    void closeServer();
 
 signals:
     void clientChanged();
 
 private slots:
-    void disconnected();
-    void readyRead();
+    void clientDisconnected();
+    void broadcast(const QByteArray& data);
 
 protected:
     void incomingConnection(qintptr handle) override;
 
 private:
+    void sendMessage(Client* client, const QByteArray& message);
+
     QString m_welcome_msg;
-    QList<QTcpSocket*> m_sockets;
+    QList<Client*> m_clients;
 };
 
 #endif //SERVER_H
