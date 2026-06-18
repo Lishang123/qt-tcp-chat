@@ -68,6 +68,11 @@ vcpkg_installed/
 Testing/
 .cache/
 
+# MacOS
 .DS_Store
+
+# CLion
 .idea/
-.qtcreator/
+
+# Qt ceator
+**/.qtcreator/
