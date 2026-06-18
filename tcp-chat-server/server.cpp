@@ -29,7 +29,7 @@ void Server::clientDisconnected() {
 
     m_clients.removeAll(client);
     disconnect(client, &Client::disconnected, this, &Server::clientDisconnected);
-    //disconnect(client, &Client::readyRead, this, &Server::broadcast);
+    disconnect(client, &Client::dataReceived, this, &Server::broadcast);
     client->deleteLater();
 
     // update GUI
@@ -37,17 +37,11 @@ void Server::clientDisconnected() {
 }
 
 void Server::sendMessage(Client* client, const QByteArray& message) {
-    QMetaObject::invokeMethod(
-            client,
-            "sendMessage",
-            Qt::QueuedConnection,
-            Q_ARG(QByteArray, message)
-        );
+    client->getSocket()->write(message);
 }
 
 void Server::broadcast(const QByteArray& data)
 {
-    auto client = qobject_cast<Client*>(sender());
     //Print the message for each connected client
     for (Client* a_client : m_clients)
     {
@@ -66,14 +60,10 @@ void Server::broadcast(const QByteArray& data)
 void Server::incomingConnection(qintptr handle)
 {
     // create the client in another thread
-    auto thread = new QThread(this);
     auto client = new Client(nullptr, handle);
-    client->moveToThread(thread);
 
-    connect(thread, &QThread::started, client, &Client::start);
-    connect(client, &Client::finished, thread, &QThread::quit);
-    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-    thread->start();
+    client->start();
+
     // add the client socket to the client list.
     m_clients.append(client);
 
