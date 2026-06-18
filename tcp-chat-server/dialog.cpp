@@ -18,13 +18,13 @@ Dialog::~Dialog()
 
 void Dialog::init()
 {
-    connect(&m_server, &Server::clientChanged, this, &Dialog::clientChanged);
+    connect(&m_application.getServer(), &Server::clientChanged, this, &Dialog::clientChanged);
     enableBtnsStopped();
 }
 
 void Dialog::clientChanged()
 {
-    ui->lblStatus->setText(QString("%0 clients connected").arg(m_server.getClientsCount()));
+    ui->lblStatus->setText(QString("%0 clients connected").arg(m_application.getServer().getClientsCount()));
 }
 
 void Dialog::enableBtnsStarted()
@@ -47,10 +47,10 @@ void Dialog::enableBtnsStopped()
 void Dialog::on_btnStart_clicked()
 {
     quint16 port = static_cast<quint16>(ui->sbPort->value());
-    m_server.setWelcome_msg(ui->txtWelcomeMsg->text());
-    if (!m_server.listen(QHostAddress::Any, port))
+    m_application.getServer().setWelcome_msg(ui->txtWelcomeMsg->text());
+    if (!m_application.getServer().listen(QHostAddress::Any, port))
     {
-        QMessageBox::critical(this, "Error", m_server.errorString());
+        QMessageBox::critical(this, "Error", m_application.getServer().errorString());
         return;
     }
     ui->lblStatus->setText("Listening...");
@@ -60,7 +60,7 @@ void Dialog::on_btnStart_clicked()
 
 void Dialog::on_btnStop_clicked()
 {
-    m_server.closeServer();
+    m_application.getServer().closeServer();
     ui->lblStatus->setText("Closed");
     enableBtnsStopped();
 }

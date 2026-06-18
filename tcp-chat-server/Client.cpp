@@ -20,7 +20,7 @@ void Client::start() {
 
 void Client::readyRead() {
     QByteArray data = m_socket->readAll();
-    //qInfo() << Q_FUNC_INFO << data;
+    qInfo() << Q_FUNC_INFO << data;
     emit dataReceived(data);
 }
 

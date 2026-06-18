@@ -22,6 +22,10 @@ set(PROJECT_SOURCES
         server.cpp
         client.h
         client.cpp
+        chatRoom.hpp
+        chatRoom.cpp
+        Application.hpp
+        Application.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

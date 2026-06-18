@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QThread>
 
+#include "ChatRoom.hpp"
 #include "Client.h"
 
 class Server : public QTcpServer
@@ -22,19 +23,24 @@ public:
 
 signals:
     void clientChanged();
+    void clientConnected(QUuid clientId);
+    void clientDisconnected(QUuid clientId);
+    void messageReceived(const QByteArray & data);
 
-private slots:
-    void clientDisconnected();
-    void broadcast(const QByteArray& data);
+public slots:
+    void handleClientDisconnected();
+    void sendMessageToClient(QUuid clientId, QString& message);
+    void broadcast(const QString& message);
+
 
 protected:
     void incomingConnection(qintptr handle) override;
 
 private:
-    void sendMessage(Client* client, const QByteArray& message);
+    void sendMessage(Client* client, const QString& message);
+
 
     QString m_welcome_msg;
-    QList<Client*> m_clients;
+    QMap<QUuid, Client*> m_clients;
 };
-
 #endif //SERVER_H
