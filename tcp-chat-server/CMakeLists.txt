@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.16)
-
 project(tcp-chat-server VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
@@ -52,7 +50,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(tcp-chat-server PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
+target_link_libraries(tcp-chat-server PRIVATE common Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
