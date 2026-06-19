@@ -25,19 +25,25 @@ signals:
     void clientChanged();
     void clientConnected(QUuid clientId);
     void clientDisconnected(QUuid clientId);
-    void messageReceived(const QByteArray & data);
+    void messageReceived(QUuid clientId, const QByteArray & data);
 
 public slots:
     void handleClientDisconnected();
-    void sendMessageToClient(QUuid clientId, QString& message);
-    void broadcast(const QString& message);
+    void handleLoginSuccess(QUuid userId, const QString& username, quint8 roomId);
+    void handleLoginFailed(QUuid userId, const QString& errorMsg);
+    // void handleUserRemoved(QUuid clientId);
+    void sendMessageToClient(QUuid senderId, QUuid recipientId, const ChatMessagePacket &packet);
+    void broadcast(const ChatMessagePacket& packet);
+    void onDataReceived(const QByteArray & data);
 
 
 protected:
     void incomingConnection(qintptr handle) override;
 
 private:
-    void sendMessage(Client* client, const QString& message);
+    void sendData(const QByteArray &data);
+    void sendData(Client* client, const QByteArray &data);
+    void removeClient(Client* client);
 
 
     QString m_welcome_msg;

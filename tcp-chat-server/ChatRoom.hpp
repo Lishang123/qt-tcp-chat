@@ -1,8 +1,9 @@
 #ifndef TCP_CHAT_CLIENT_CHATROOM_HPP
 #define TCP_CHAT_CLIENT_CHATROOM_HPP
 #include <iostream>
+#include <ranges>
 #include <qobject.h>
-
+#include "../common/Packet.hpp"
 #include "client.h"
 
 struct User {
@@ -22,7 +23,7 @@ struct User {
 
     QUuid user_id;
     QString username;
-    int roomID;
+    quint8 roomID;
 };
 
 class ChatRoom : public QObject {
@@ -37,15 +38,21 @@ public:
 
 signals:
     void clientChanged();
-    void sendMessageToClient(QUuid clientId, QString& message);
-    void broadcast(QString& message);
+    void userAdded(QUuid userId, const QString& username, quint8 roomId);
+    void loginFailed(QUuid userId, const QString& errorMsg);
+    //void userRemoved(QUuid userId);
+    void sendMessageToClient(QUuid senderId, QUuid recipientId, const ChatMessagePacket &packet);
+    void broadcast(const ChatMessagePacket &packet);
 
 public slots:
-    void handleMessage(const QByteArray& message);
+    void handleMessage(QUuid senderId, const QByteArray & data);
     void removeUser(QUuid userId);
-    void addUser(QUuid userId);
 
 private:
+    bool handleLoginRequest(QUuid clientId, LoginRequestPacket& packet);
+    bool handleChatMessage(QUuid senderId, ChatMessagePacket& packet);
+    void addUser(QUuid clientId, const QString & username, quint8 roomId);
+    User* findUserbyName(QString &username);
 
     QString m_welcome_msg;
     QMap<QUuid, User> m_users;

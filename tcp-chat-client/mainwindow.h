@@ -8,6 +8,7 @@
 #include <QStringListModel>
 #include <QInputDialog>
 #include <QMessageBox>
+#include "../common/Packet.hpp"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -45,12 +46,19 @@ private:
     void disableAllBtns();
     void setConnectedBtnStates();
     void setDisconnectedBtnStates();
+    void sendLoginRequest(const LoginRequestPacket &loginRequestPacket);
+    void sendMessage(const QString& message);
+    void printMessage(const ChatMessagePacket &messagePacket);
+    void printMessage(const LoginSuccessPacket &loginSuccessPacket);
+
+
+    LoginRequestPacket requestLoginInfo();
 
     Ui::MainWindow *ui;
     QTcpSocket m_socket;
     QStringList m_list;
     QStringListModel m_model;
     QString m_name;
-
+    quint8 m_room_id = 0;
 };
 #endif // MAINWINDOW_H

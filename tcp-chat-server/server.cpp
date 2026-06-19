@@ -21,39 +21,65 @@ void Server::closeServer() {
 
 void Server::handleClientDisconnected() {
     auto *client = qobject_cast<Client *>(sender());
+    removeClient(client);
+    emit clientChanged();
+    emit clientDisconnected(client->getClientId());
+}
+
+void Server::handleLoginSuccess(QUuid userId, const QString& username, quint8 roomId) {
+    qInfo() << Q_FUNC_INFO;
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::LoginSuccess;
+    stream << LoginSuccessPacket{username, roomId, m_welcome_msg};
+    sendData(m_clients[userId], data);
+}
+
+void Server::handleLoginFailed(QUuid userId, const QString& errorMsg) {
+    auto *client = m_clients[userId];
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::LoginFail;
+    stream << LoginFailedPacket{ errorMsg};
+    sendData(m_clients[userId], data);
+
+    client->getSocket()->disconnectFromHost();
+}
+
+
+
+void Server::removeClient(Client *client) {
     if (!client) return;
 
     m_clients.remove(client->getClientId());
     disconnect(client, &Client::disconnected, this, &Server::handleClientDisconnected);
-    disconnect(client, &Client::dataReceived, this, &Server::broadcast);
+    disconnect(client, &Client::dataReceived, this, &Server::onDataReceived);
     client->deleteLater();
-
-    // update GUI
-    emit clientDisconnected(client->getClientId());
     emit clientChanged();
 }
 
-void Server::sendMessage(Client *client, const QString &message) {
-    client->getSocket()->write(message.toUtf8());
+void Server::sendMessageToClient(QUuid senderId, QUuid recipientId, const ChatMessagePacket &packet) {
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::ChatMessage;
+    stream << packet;
+    sendData(m_clients[senderId], data);
+    sendData(m_clients[recipientId], data);
 }
 
-void Server::sendMessageToClient(QUuid clientId, QString &message) {
-    sendMessage(m_clients[clientId], message);
-}
 
-
-void Server::broadcast(const QString &message) {
+void Server::broadcast(const ChatMessagePacket& packet) {
     //Print the message for each connected client
-    qInfo() << Q_FUNC_INFO << message;
+    qInfo() << Q_FUNC_INFO;
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::ChatMessage;
+    stream << packet;
     for (Client *a_client: m_clients.values()) {
-        sendMessage(a_client, message);
+        a_client->getSocket()->write(data);
     }
     emit clientChanged();
 }
-
-// void Server::messageReceived(const QByteArray &message) {
-//     emit messageReceived(message);
-// }
 
 /*
      * incomingConnection() is only called AFTER the TCP
@@ -73,18 +99,20 @@ void Server::incomingConnection(qintptr handle) {
     m_clients.insert(client->getClientId(), client);
 
     connect(client, &Client::disconnected, this, &Server::handleClientDisconnected);
-    bool ok = connect(client, &Client::dataReceived, this, &Server::messageReceived);
-    // qInfo() << "forward connect ok:" << ok;
-    // connect(client, &Client::dataReceived,
-    //     this, [] {
-    //         qInfo() << "Server received Client::dataReceived";
-    //     });
+    connect(client, &Client::dataReceived, this, &Server::onDataReceived);
 
     // update GUI
-    emit clientConnected(client->getClientId());
     emit clientChanged();
+}
 
-    sendMessage(client, m_welcome_msg.toUtf8());
+
+void Server::onDataReceived(const QByteArray & data) {
+    auto client = qobject_cast<Client *>(sender());
+    if (!client) {
+        qInfo() << Q_FUNC_INFO << " sender is not a client " << data;
+        return;
+    };
+    emit messageReceived(client->getClientId(), data);
 }
 
 void Server::setWelcome_msg(const QString &newWelcome_msg) {
@@ -93,4 +121,16 @@ void Server::setWelcome_msg(const QString &newWelcome_msg) {
 
 size_t Server::getClientsCount() {
     return m_clients.count();
+}
+
+
+void Server::sendData(Client *client, const QByteArray &data) {
+    client->getSocket()->write(data);
+}
+
+
+void Server::sendData(const QByteArray &data) {
+    for (Client *a_client: m_clients.values()) {
+        a_client->getSocket()->write(data);
+    }
 }
