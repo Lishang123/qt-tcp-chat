@@ -33,7 +33,6 @@ signals:
 
 private slots:
 
-    //void disconnected();
     void readyRead();
     void sendMessage(const QByteArray& message);
 
