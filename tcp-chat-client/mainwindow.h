@@ -9,6 +9,7 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include "../common/Packet.hpp"
+#include "Application.hpp"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -25,40 +26,36 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
 
+signals:
+    void connectAttempted(const QString& address, quint16 port);
+    void disconnectAttempted();
+    void requestSendMessage(const QString& message);
+
+public slots:
+
+    void onClientConnected();
+    void onClientDisconnected();
+    void onClientLoggedIn(const LoginSuccessPacket& loginSuccessPacket);
+    void onMessageReceived(const ChatMessagePacket& chatMessagePacket);
+    void onError(const QString& errorMessage);
+
 private slots:
 
     void on_btnConnect_clicked();
-
     void on_btnDisconnect_clicked();
-
     void on_btnSend_clicked();
-
-    void onConnected();
-
-    void onDisconnected();
-
-    void OnReadyRead();
-
-    void error(QAbstractSocket::SocketError error);
 
 private:
 
     void disableAllBtns();
     void setConnectedBtnStates();
     void setDisconnectedBtnStates();
-    void sendLoginRequest(const LoginRequestPacket &loginRequestPacket);
-    void sendMessage(const QString& message);
     void printMessage(const ChatMessagePacket &messagePacket);
     void printMessage(const LoginSuccessPacket &loginSuccessPacket);
 
-
-    LoginRequestPacket requestLoginInfo();
+    void requestLoginInfo();
 
     Ui::MainWindow *ui;
-    QTcpSocket m_socket;
-    QStringList m_list;
-    QStringListModel m_model;
-    QString m_name;
-    quint8 m_room_id = 0;
+    Application m_application;
 };
 #endif // MAINWINDOW_H

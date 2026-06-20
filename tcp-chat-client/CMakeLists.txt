@@ -15,6 +15,10 @@ set(TS_FILES tcp-chat-client_de_DE.ts)
 
 set(PROJECT_SOURCES
         main.cpp
+        Application.cpp
+        Application.hpp
+        Client.cpp
+        Client.hpp
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
