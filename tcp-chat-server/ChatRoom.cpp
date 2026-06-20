@@ -11,8 +11,8 @@ void ChatRoom::setWelcomeMsg(const QString &newWelcomeMsg) {
 
 RoomInfo ChatRoom::getRoomInfo() {
     qInfo() << Q_FUNC_INFO;
-    auto usernames = m_users.usernames();
-    return RoomInfo{m_roomID, m_roomName, usernames};
+    //auto usernames = m_users.usernames();
+    return RoomInfo{m_roomID, m_roomName};
 }
 
 size_t ChatRoom::getClientsCount() {

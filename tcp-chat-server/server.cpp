@@ -22,6 +22,18 @@ void Server::closeServer() {
 void Server::handleClientDisconnected() {
     auto *client = qobject_cast<Client *>(sender());
     removeClient(client);
+
+    if (m_clients.count() > 0) {
+        QByteArray data;
+        QDataStream stream(&data, QIODevice::WriteOnly);
+        stream << PacketType::NotifyLogout;
+        stream << LogoutNotificationPacket{client->getClientId()};
+        foreach(QUuid clientId, m_clients.keys()) {
+            if (clientId == client->getClientId()) continue;
+            sendData(m_clients[clientId], data);
+        }
+    }
+
     emit clientChanged();
     emit clientDisconnected(client->getClientId());
 }
@@ -33,6 +45,17 @@ void Server::handleLoginSuccess(QUuid userId, const QString& username, QList<Roo
     stream << PacketType::LoginSuccess;
     stream << LoginSuccessPacket{username, roomInfos, m_welcome_msg};
     sendData(m_clients[userId], data);
+    if (m_clients.count() > 1) {
+        QByteArray notifyData;
+        QDataStream notifyStream(&notifyData, QIODevice::WriteOnly);
+        notifyStream << PacketType::NotifyLogin;
+        notifyStream << LoginNotificationPacket{userId, username };
+        foreach(QUuid clientId, m_clients.keys()) {
+            if (clientId == userId) continue;
+            sendData(m_clients[clientId], notifyData);
+        }
+    }
+
 }
 
 void Server::handleLoginFailed(QUuid userId, const QString& errorMsg) {

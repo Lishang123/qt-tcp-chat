@@ -18,9 +18,11 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     //connect signals and slots
     connect(ui->textMsg, &QLineEdit::returnPressed, this, &MainWindow::on_btnSend_clicked);
 
-    //connect(&m_application->getClient(), &Client::connected, this, &MainWindow::onClientConnected);
+    //connect(&m_application->getClient(), &Client::connecloggedInted, this, &MainWindow::onClientConnected);
     connect(&m_application->getClient(), &Client::disconnected, this, &MainWindow::onClientDisconnected);
-    // connect(&m_application->getClient(), &Client::loggedIn, this, &MainWindow::onClientLoggedIn);
+    connect(&m_application->getClient(), &Client::notifyUserLogin, this, &MainWindow::addUser);
+    connect(&m_application->getClient(), &Client::notifyUserLogout, this, &MainWindow::removeUser);
+
     connect(&m_application->getClient(), &Client::messageReceived, this, &MainWindow::onMessageReceived);
     connect(&m_application->getClient(), &Client::errorOccured, this, &MainWindow::onError);
 
@@ -57,6 +59,14 @@ void MainWindow::on_btnSend_clicked()
     qInfo() << "send clicked";
     m_application->sendMessage(ui->textMsg->text());
     ui->textMsg->clear();
+}
+
+void MainWindow::addUser(const LoginNotificationPacket &loginNotificationPacket) {
+    m_application->addUser(loginNotificationPacket.userId, loginNotificationPacket.username);
+}
+
+void MainWindow::removeUser(const LogoutNotificationPacket &logoutNotificationPacket) {
+    m_application->removeUser(logoutNotificationPacket);
 }
 
 void MainWindow::onError(const QString &errorMessage) {

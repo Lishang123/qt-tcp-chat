@@ -70,6 +70,18 @@ void Client::OnReadyRead()
             emit loggedIn(loginSuccessPacket);
             break;
         }
+        case PacketType::NotifyLogin: {
+            LoginNotificationPacket loginNotificationPacket;
+            stream >> loginNotificationPacket;
+            emit notifyUserLogin(loginNotificationPacket);
+            break;
+        }
+        case PacketType::NotifyLogout: {
+            LogoutNotificationPacket logoutNotificationPacket;
+            stream >> logoutNotificationPacket;
+            emit notifyUserLogout(logoutNotificationPacket);
+            break;
+        }
         case PacketType::ChatMessage: {
             ChatMessagePacket messagePacket;
             stream >> messagePacket;

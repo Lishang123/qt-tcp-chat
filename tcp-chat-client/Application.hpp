@@ -22,7 +22,11 @@ public:
 
     void sendMessage(const QString& message);
 
-    void updateRooms();
+    void updateRooms(const QList<RoomInfo>& roomInfos);
+
+    void addUser(const QUuid &roomId, const QString &userName);
+    void removeUser(const LogoutNotificationPacket &logoutNotificationPacket);
+
 
     [[nodiscard]] Client& getClient() {
         return m_client;
@@ -56,13 +60,13 @@ public:
         this->m_currentRoomId = m_room_id;
     }
 
-    void setRoomInfos(const QList<RoomInfo> &m_room_infos) {
-        m_roomInfos = m_room_infos;
-    }
-
-    QList<RoomInfo>& getRoomInfos() {
-        return m_roomInfos;
-    }
+    // void setRoomInfos(const QList<RoomInfo> &m_room_infos) {
+    //     m_roomInfos = m_room_infos;
+    // }
+    //
+    // QList<RoomInfo>& getRoomInfos() {
+    //     return m_roomInfos;
+    // }
 
 public slots:
     void disconnectFromServer();
@@ -75,7 +79,7 @@ private:
     QStringListModel m_ChatModel;
     QUuid m_publicRoomId;
     QUuid m_currentRoomId;
-    QList<RoomInfo> m_roomInfos;
+    // QList<RoomInfo> m_roomInfos;
     // chatModel m_chatModel;
     QStandardItemModel m_roomListModel;
 };

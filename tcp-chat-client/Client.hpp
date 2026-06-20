@@ -18,6 +18,8 @@ signals:
     void connected();
     void disconnected();
     void loggedIn(const LoginSuccessPacket& loginSuccessPacket);
+    void notifyUserLogin(const LoginNotificationPacket& loginNotificationPacket);
+    void notifyUserLogout(const LogoutNotificationPacket& logoutNotificationPacket);
     void loggedOut();
     void messageReceived(const ChatMessagePacket& chatMessagePacket);
     void errorOccured(const QString& errorMessage);

@@ -69,8 +69,8 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
         return false;
     }
 
-    //  Create the room for user
-    auto room = createRoom(QUuid::createUuid(), packet.username);
+    //  Create the private room for user
+    auto room = createRoom(clientId, packet.username);
     room->addUser(clientId, user);
 
     //  Add user to public group

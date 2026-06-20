@@ -6,6 +6,8 @@ enum PacketType : quint8 {
     LoginRequest = 1,
     LoginSuccess = 11,
     LoginFail = 12,
+    NotifyLogin = 13,
+    NotifyLogout = 14,
 
     LogoutRequest = 2,
 
@@ -31,16 +33,16 @@ inline QDataStream& operator>>(QDataStream& stream, LoginRequestPacket& loginPac
 struct RoomInfo {
     QUuid roomId;
     QString roomName;
-    QList<QString> usernames;
+    // QList<QString> usernames;
 };
 
 inline QDataStream& operator<<(QDataStream& stream, const RoomInfo& roomInfo) {
-    stream  << roomInfo.roomId << roomInfo.roomName << roomInfo.usernames;
+    stream  << roomInfo.roomId << roomInfo.roomName; // << roomInfo.usernames;
     return stream;
 }
 
 inline QDataStream& operator>>(QDataStream& stream, RoomInfo& roomInfo) {
-    stream  >> roomInfo.roomId >> roomInfo.roomName >> roomInfo.usernames;
+    stream  >> roomInfo.roomId >> roomInfo.roomName; // >> roomInfo.usernames;
     return stream;
 }
 
@@ -60,6 +62,9 @@ inline QDataStream& operator>>(QDataStream& stream, LoginSuccessPacket& loginPac
     return stream;
 }
 
+
+
+
 struct LoginFailedPacket {
     QString errorMsg;
 };
@@ -71,6 +76,37 @@ inline QDataStream& operator<<(QDataStream& stream, const LoginFailedPacket& log
 
 inline QDataStream& operator>>(QDataStream& stream, LoginFailedPacket& loginPacket) {
     stream  >> loginPacket.errorMsg;
+    return stream;
+}
+
+
+struct LoginNotificationPacket {
+    QUuid userId;
+    QString username;
+};
+
+inline QDataStream& operator<<(QDataStream& stream, const LoginNotificationPacket& loginPacket) {
+    stream  << loginPacket.userId << loginPacket.username;
+    return stream;
+}
+
+inline QDataStream& operator>>(QDataStream& stream, LoginNotificationPacket& loginPacket) {
+    stream  >> loginPacket.userId >> loginPacket.username;
+    return stream;
+}
+
+
+struct LogoutNotificationPacket {
+    QUuid userId;
+};
+
+inline QDataStream& operator<<(QDataStream& stream, const LogoutNotificationPacket& loginPacket) {
+    stream  << loginPacket.userId;
+    return stream;
+}
+
+inline QDataStream& operator>>(QDataStream& stream, LogoutNotificationPacket& loginPacket) {
+    stream  >> loginPacket.userId;;
     return stream;
 }
 

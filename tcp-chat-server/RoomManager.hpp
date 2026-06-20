@@ -34,6 +34,7 @@ private:
     bool handleChatMessage(QUuid senderId, ChatMessagePacket& packet);
 
     std::map<QUuid, ChatRoom*> m_rooms;
+    //std::map<QUuid, QUuid> m_userIdToRoomId;
     QUuid m_publicRoomId;
     Users m_users;
 };

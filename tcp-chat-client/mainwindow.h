@@ -31,6 +31,8 @@ public slots:
     void onClientDisconnected();
     void onMessageReceived(const ChatMessagePacket& chatMessagePacket);
     void onError(const QString& errorMessage);
+    void addUser(const LoginNotificationPacket &loginNotificationPacket);
+    void removeUser(const LogoutNotificationPacket &logoutNotificationPacket);
 
 private slots:
 
