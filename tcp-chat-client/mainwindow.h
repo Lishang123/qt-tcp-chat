@@ -23,25 +23,17 @@ class MainWindow : public QMainWindow
 
 public:
 
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(Application *application, QWidget *parent = nullptr);
     ~MainWindow() override;
-
-signals:
-    void connectAttempted(const QString& address, quint16 port);
-    void disconnectAttempted();
-    void requestSendMessage(const QString& message);
 
 public slots:
 
-    void onClientConnected();
     void onClientDisconnected();
-    void onClientLoggedIn(const LoginSuccessPacket& loginSuccessPacket);
     void onMessageReceived(const ChatMessagePacket& chatMessagePacket);
     void onError(const QString& errorMessage);
 
 private slots:
 
-    void on_btnConnect_clicked();
     void on_btnDisconnect_clicked();
     void on_btnSend_clicked();
 
@@ -56,6 +48,6 @@ private:
     void requestLoginInfo();
 
     Ui::MainWindow *ui;
-    Application m_application;
+    Application* m_application;
 };
 #endif // MAINWINDOW_H

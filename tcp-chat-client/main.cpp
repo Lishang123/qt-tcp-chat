@@ -1,8 +1,12 @@
+#include <iostream>
+
 #include "mainwindow.h"
 
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
+#include "Application.hpp"
+#include "loginform.h"
 
 int main(int argc, char *argv[])
 {
@@ -17,7 +21,11 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    MainWindow window;
-    window.show();
-    return QCoreApplication::exec();
+    Application application;
+    LoginForm loginForm(&application);
+    if (loginForm.exec() == QDialog::Accepted) {
+        MainWindow window(&application);
+        window.show();
+        return QCoreApplication::exec();
+    }
 }
