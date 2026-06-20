@@ -49,7 +49,7 @@ void Client::onDisconnected()
 
 void Client::OnReadyRead()
 {
-    qInfo() << "ready read!";
+    qInfo() << Q_FUNC_INFO;
     QByteArray data = m_socket.readAll();
     QDataStream stream(&data, QIODevice::ReadOnly);
     PacketType packetType;
@@ -108,11 +108,11 @@ void Client::disconnectFromHost() {
 }
 
 
-void Client::sendMessage(const QString &message) {
+void Client::sendMessage(const QString &message, QUuid roomId) {
     QByteArray data;
     QDataStream out(&data, QIODevice::WriteOnly);
     out << PacketType::ChatMessage;
-    out << ChatMessagePacket{m_name, "", message};
+    out << ChatMessagePacket{m_name, roomId, message};
     if (!m_socket.write(data)) {
         qCritical() << "cannot send message: " << data << m_socket.errorString();
     };
