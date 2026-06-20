@@ -22,6 +22,8 @@ public:
 
     void sendMessage(const QString& message);
 
+    void updateRooms();
+
     [[nodiscard]] Client& getClient() {
         return m_client;
     }
@@ -30,8 +32,12 @@ public:
         return m_list;
     }
 
-    [[nodiscard]] QStringListModel& getModel() {
-        return m_model;
+    [[nodiscard]] QStringListModel& getChatModel() {
+        return m_chatModel;
+    }
+
+    [[nodiscard]] QStandardItemModel& getRoomListModel() {
+        return m_roomListModel;
     }
 
     [[nodiscard]] QUuid getRoomId()  {
@@ -51,10 +57,9 @@ public:
     }
 
 private:
-    void init();
     Client m_client;
     QStringList m_list;
-    QStringListModel m_model;
+    QStringListModel m_chatModel;
     QUuid m_currentRoomId;
     QList<RoomInfo> m_roomInfos;
     // chatModel m_chatModel;

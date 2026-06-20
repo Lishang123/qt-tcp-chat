@@ -31,7 +31,9 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     ui->btnSend->setEnabled(true);
 
     //set string list model
-    ui->chatbox->setModel(&m_application->getModel());
+    ui->chatbox->setModel(&m_application->getChatModel());
+    ui->roomView->setModel(&m_application->getRoomListModel());
+
 
     QString username = m_application->getClient().getUserName();
     setWindowTitle("Chat Client " + username);

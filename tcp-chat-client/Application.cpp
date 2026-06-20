@@ -2,8 +2,7 @@
 
 
 Application::Application(QObject *parent) : QObject(parent) {
-    m_model.setStringList(m_list);
-    init();
+    m_chatModel.setStringList(m_list);
 }
 
 void Application::sendLoginRequest(const LoginRequestPacket &loginRequestPacket) {
@@ -21,13 +20,16 @@ void Application::disconnectFromHost() {
 
 void Application::addChatMessage(const QString &message) {
     m_list.append(message);
-    m_model.setStringList(m_list);
+    m_chatModel.setStringList(m_list);
 }
 
 void Application::sendMessage(const QString &message) {
     m_client.sendMessage(message, m_currentRoomId);
 }
 
-void Application::init() {
-
+void Application::updateRooms() {
+    //m_roomListModel.appendRow(m_roomListModel.invisibleRootItem());
+    foreach(auto& roomInfo, m_roomInfos) {
+        m_roomListModel.appendRow(new QStandardItem(roomInfo.roomName));
+    }
 }
