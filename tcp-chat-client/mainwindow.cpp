@@ -7,6 +7,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     , m_application(application)
 {
     ui->setupUi(this);
+    ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     for (int i = 0; i < ui->horizontalLayout->count(); ++i) {
         QLayoutItem* item = ui->horizontalLayout->itemAt(i);
