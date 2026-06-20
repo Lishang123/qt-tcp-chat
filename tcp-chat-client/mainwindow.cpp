@@ -64,14 +64,6 @@ void MainWindow::onError(const QString &errorMessage) {
     QMessageBox::critical(this, "Error", errorMessage);
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
-{
-    qInfo() << "Closing main window";
-    qInfo() << "Top-level widgets:" << QApplication::topLevelWidgets();
-
-    QMainWindow::closeEvent(event);
-}
-
 void MainWindow::onClientDisconnected() {
     qInfo() << Q_FUNC_INFO;
     //setDisconnectedBtnStates();

@@ -23,20 +23,14 @@ int main(int argc, char *argv[])
     }
     Application application;
 
-    //Must add this line otherwise the socket is never closed and the program will not shut down when quitting!
+    //Must add this line otherwise the socket is not closed!
     QObject::connect(&a, &QCoreApplication::aboutToQuit, &application, &Application::disconnectFromServer);
-
     {
         LoginForm loginForm(&application);
         if (loginForm.exec() != QDialog::Accepted)
             return 0;
     }
-
     MainWindow window(&application);
     window.show();
-    int result = a.exec();
-
-    qInfo() << "EVENT LOOP EXITED";
-
-    return result;
+    return a.exec();
 }

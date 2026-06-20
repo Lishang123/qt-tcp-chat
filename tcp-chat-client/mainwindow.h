@@ -26,9 +26,6 @@ public:
     explicit MainWindow(Application *application, QWidget *parent = nullptr);
     ~MainWindow() override;
 
-protected:
-    void closeEvent(QCloseEvent *event) override;
-
 public slots:
 
     void onClientDisconnected();
