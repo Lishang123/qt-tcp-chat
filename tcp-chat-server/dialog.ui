@@ -41,7 +41,7 @@
    <item>
     <widget class="QLineEdit" name="txtWelcomeMsg">
      <property name="text">
-      <string>Welcome to the Chat !</string>
+      <string>welcome to the chat !</string>
      </property>
     </widget>
    </item>
