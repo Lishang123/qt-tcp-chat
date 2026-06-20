@@ -34,6 +34,7 @@ void RoomManager::handleMessage(QUuid senderId, const QByteArray &data) {
             ChatMessagePacket chatMessagePacket;
             ds >> chatMessagePacket;
             handleChatMessage(senderId, chatMessagePacket);
+            break;
         }
         // case PacketType::LogoutRequest: {
         //     LogoutRequestPacket logoutPacket;
@@ -42,7 +43,7 @@ void RoomManager::handleMessage(QUuid senderId, const QByteArray &data) {
         //     break;
         // }
         default:
-            qCritical() << Q_FUNC_INFO << "Unknown packet type";
+            qCritical() << Q_FUNC_INFO << "Unknown packet type: " << data ;
 
     }
 }
@@ -87,6 +88,7 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
 }
 
 void RoomManager::removeUser(QUuid userId) {
+    qInfo() << Q_FUNC_INFO;
     for (const auto & [_, room]: m_rooms) {
         room->removeUser(userId);
     }

@@ -22,10 +22,21 @@ int main(int argc, char *argv[])
         }
     }
     Application application;
-    LoginForm loginForm(&application);
-    if (loginForm.exec() == QDialog::Accepted) {
-        MainWindow window(&application);
-        window.show();
-        return QCoreApplication::exec();
+
+    //Must add this line otherwise the socket is never closed and the program will not shut down when quitting!
+    QObject::connect(&a, &QCoreApplication::aboutToQuit, &application, &Application::disconnectFromServer);
+
+    {
+        LoginForm loginForm(&application);
+        if (loginForm.exec() != QDialog::Accepted)
+            return 0;
     }
+
+    MainWindow window(&application);
+    window.show();
+    int result = a.exec();
+
+    qInfo() << "EVENT LOOP EXITED";
+
+    return result;
 }

@@ -31,7 +31,8 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     ui->btnSend->setEnabled(true);
 
     //set string list model
-    ui->chatbox->setModel(&m_application->getModel());
+    ui->chatbox->setModel(&m_application->getChatModel());
+    ui->roomView->setModel(&m_application->getRoomListModel());
 
     QString username = m_application->getClient().getUserName();
     setWindowTitle("Chat Client " + username);
@@ -63,9 +64,19 @@ void MainWindow::onError(const QString &errorMessage) {
     QMessageBox::critical(this, "Error", errorMessage);
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    qInfo() << "Closing main window";
+    qInfo() << "Top-level widgets:" << QApplication::topLevelWidgets();
+
+    QMainWindow::closeEvent(event);
+}
+
 void MainWindow::onClientDisconnected() {
-    setDisconnectedBtnStates();
-    setWindowTitle("Chat Client: Logged out");
+    qInfo() << Q_FUNC_INFO;
+    //setDisconnectedBtnStates();
+    qInfo() << QApplication::topLevelWidgets();
+    //setWindowTitle("Chat Client: Logged out");
 }
 
 void MainWindow::onMessageReceived(const ChatMessagePacket& chatMessagePacket) {

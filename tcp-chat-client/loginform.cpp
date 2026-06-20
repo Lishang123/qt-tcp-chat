@@ -33,6 +33,7 @@ void LoginForm::onClientLoggedIn(const LoginSuccessPacket &loginSuccessPacket) {
     if (it != m_application->getRoomInfos().end()) {
         m_application->setRoomId(it->roomId);
     }
+    m_application->updateRooms();
     accept();
 }
 
