@@ -40,11 +40,19 @@ public:
         return m_roomListModel;
     }
 
-    [[nodiscard]] QUuid getRoomId()  {
+    [[nodiscard]] QUuid getPublicRoomId()  {
+        return m_publicRoomId;
+    }
+
+    void setPublicRoomId(QUuid m_room_id) {
+        this->m_publicRoomId = m_room_id;
+    }
+
+    [[nodiscard]] QUuid getCurrentRoomId()  {
         return m_currentRoomId;
     }
 
-    void setRoomId(QUuid m_room_id) {
+    void setCurrentRoomId(QUuid m_room_id) {
         this->m_currentRoomId = m_room_id;
     }
 
@@ -65,6 +73,7 @@ private:
     Client m_client;
     QStringList m_list;
     QStringListModel m_ChatModel;
+    QUuid m_publicRoomId;
     QUuid m_currentRoomId;
     QList<RoomInfo> m_roomInfos;
     // chatModel m_chatModel;

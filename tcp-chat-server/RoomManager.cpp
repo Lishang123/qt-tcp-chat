@@ -89,8 +89,16 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
 
 void RoomManager::removeUser(QUuid userId) {
     qInfo() << Q_FUNC_INFO;
-    for (const auto & [_, room]: m_rooms) {
+
+    QList<QUuid> roomsToRemove;
+    for (const auto & [roomId, room]: m_rooms) {
+        qInfo()  << room->getRoomName();
         room->removeUser(userId);
+        if (room->getRoomName() != "public" && room->isEmpty())
+            roomsToRemove.append(roomId);
+    }
+    foreach (auto roomId, roomsToRemove) {
+        m_rooms.erase(roomId);
     }
     m_users.remove(userId);
 }

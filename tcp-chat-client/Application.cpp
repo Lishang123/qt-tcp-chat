@@ -28,8 +28,28 @@ void Application::sendMessage(const QString &message) {
 }
 
 void Application::updateRooms() {
-    m_roomListModel.appendRow(m_roomListModel.invisibleRootItem());
+    //This line keeps the program running forever!!
+    //m_roomListModel.appendRow(m_roomListModel.invisibleRootItem());
+
+    // print the public room
     foreach(auto roomInfo, m_roomInfos) {
+        if(roomInfo.roomId == m_publicRoomId) {
+            m_roomListModel.appendRow(new QStandardItem(roomInfo.roomName));
+            break;
+        }
+    }
+    // print the top room if not public
+    if (m_publicRoomId != m_currentRoomId) {
+        foreach(auto roomInfo, m_roomInfos) {
+            if(roomInfo.roomId == m_currentRoomId) {
+                m_roomListModel.appendRow(new QStandardItem(roomInfo.roomName));
+                break;
+            }
+        }
+    }
+
+    foreach(auto roomInfo, m_roomInfos) {
+        if(roomInfo.roomId == m_publicRoomId || roomInfo.roomId == m_currentRoomId) continue;
         m_roomListModel.appendRow(new QStandardItem(roomInfo.roomName));
     }
 }

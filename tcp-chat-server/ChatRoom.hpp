@@ -42,6 +42,9 @@ public:
     size_t getClientsCount();
 
     void addUser(QUuid clientId, std::shared_ptr<User> user);
+    bool isEmpty() const {
+        return m_users.isEmpty();
+    }
 
     [[nodiscard]] const QString & getRoomName() const {
         return m_roomName;
@@ -58,7 +61,7 @@ signals:
     void clientChanged();
     void userAdded(QUuid userId, const QString& username, quint8 roomId);
     void loginFailed(QUuid userId, const QString& errorMsg);
-    //void userRemoved(QUuid userId);
+    void userRemoved(QUuid userId);
 
 public slots:
     void removeUser(QUuid userId);

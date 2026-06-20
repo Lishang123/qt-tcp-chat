@@ -31,7 +31,8 @@ void LoginForm::onClientLoggedIn(const LoginSuccessPacket &loginSuccessPacket) {
         return roomInfo.roomName == "public";
     });
     if (it != m_application->getRoomInfos().end()) {
-        m_application->setRoomId(it->roomId);
+        m_application->setPublicRoomId(it->roomId);
+        m_application->setCurrentRoomId(it->roomId);
     }
     m_application->updateRooms();
     accept();
