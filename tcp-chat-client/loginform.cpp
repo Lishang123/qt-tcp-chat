@@ -26,7 +26,13 @@ void LoginForm::onClientConnected() {
 }
 
 void LoginForm::onClientLoggedIn(const LoginSuccessPacket &loginSuccessPacket) {
-    Q_UNUSED(loginSuccessPacket);
+    m_application->setRoomInfos(loginSuccessPacket.roomInfos);
+    auto it = std::ranges::find_if(m_application->getRoomInfos(), [](auto& roomInfo) {
+        return roomInfo.roomName == "public";
+    });
+    if (it != m_application->getRoomInfos().end()) {
+        m_application->setRoomId(it->roomId);
+    }
     accept();
 }
 
@@ -36,7 +42,7 @@ void LoginForm::on_btnConnect_clicked()
     // cast the port to quint16 for connectToHost call
     // TCP and UDP port numbers are defined by the Internet protocol as:
     // 0 - 65535, which is an unsigned 16-bit integer.
-    quint16 port = static_cast<quint16>(ui->spboxPort->value());
+    auto port = static_cast<quint16>(ui->spboxPort->value());
     //disable all buttons so that the user doesn't click anything in between
     ui->btnConnect->setDisabled(true);
     m_application->connectToServer(ui->textServer->text(), port);
@@ -54,7 +60,7 @@ void LoginForm::requestLoginInfo() {
         QString username = QInputDialog::getText(
             this, //parent widget
         "Name", //title
-        "What is your name?",//label text inside of the dialog
+        "What is your name?",//label text inside the dialog
         QLineEdit::EchoMode::Normal, //show typed text normally
         m_application->getClient().getUserName() // The pre-filled text inside the input field.
         );

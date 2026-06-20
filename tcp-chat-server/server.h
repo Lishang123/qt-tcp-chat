@@ -29,10 +29,10 @@ signals:
 
 public slots:
     void handleClientDisconnected();
-    void handleLoginSuccess(QUuid userId, const QString& username, quint8 roomId);
+    void handleLoginSuccess(QUuid userId, const QString& username, QList<RoomInfo>& roomInfos);
     void handleLoginFailed(QUuid userId, const QString& errorMsg);
     // void handleUserRemoved(QUuid clientId);
-    void sendMessageToClient(QUuid senderId, QUuid recipientId, const ChatMessagePacket &packet);
+    void sendMessageToRoom(ChatRoom& chatRoom, const ChatMessagePacket &packet);
     void broadcast(const ChatMessagePacket& packet);
     void onDataReceived(const QByteArray & data);
 

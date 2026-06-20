@@ -1,6 +1,7 @@
 #ifndef TCP_CHAT_CLIENT_APPLICATION_HPP
 #define TCP_CHAT_CLIENT_APPLICATION_HPP
 
+#include "RoomManager.hpp"
 #include "server.h"
 
 class Application : public QObject{
@@ -9,20 +10,19 @@ class Application : public QObject{
 public:
     explicit Application(QObject *parent = nullptr);
 
-private:
-    void init();
-    Server m_server;
-    ChatRoom m_chatRoom;
-
-public:
     [[nodiscard]] Server & getServer() {
         return m_server;
     }
 
-    [[nodiscard]] ChatRoom & getChatRoom() {
-        return m_chatRoom;
+    [[nodiscard]] RoomManager & getChatRooms() {
+        return m_roomManager;
     }
 
+
+private:
+    void init();
+    Server m_server;
+    RoomManager m_roomManager;
 };
 
 

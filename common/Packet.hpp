@@ -28,20 +28,35 @@ inline QDataStream& operator>>(QDataStream& stream, LoginRequestPacket& loginPac
     return stream;
 }
 
+struct RoomInfo {
+    QUuid roomId;
+    QString roomName;
+    QList<QString> usernames;
+};
+
+inline QDataStream& operator<<(QDataStream& stream, const RoomInfo& roomInfo) {
+    stream  << roomInfo.roomId << roomInfo.roomName << roomInfo.usernames;
+    return stream;
+}
+
+inline QDataStream& operator>>(QDataStream& stream, RoomInfo& roomInfo) {
+    stream  >> roomInfo.roomId >> roomInfo.roomName >> roomInfo.usernames;
+    return stream;
+}
 
 struct LoginSuccessPacket {
     QString username;
-    quint8 roomID;
+    QList<RoomInfo> roomInfos;
     QString welcomeMsg;
 };
 
 inline QDataStream& operator<<(QDataStream& stream, const LoginSuccessPacket& loginPacket) {
-    stream << loginPacket.username << loginPacket.roomID << loginPacket.welcomeMsg;
+    stream << loginPacket.username << loginPacket.roomInfos << loginPacket.welcomeMsg ;
     return stream;
 }
 
 inline QDataStream& operator>>(QDataStream& stream, LoginSuccessPacket& loginPacket) {
-    stream >> loginPacket.username >> loginPacket.roomID >> loginPacket.welcomeMsg;
+    stream >> loginPacket.username >> loginPacket.roomInfos >> loginPacket.welcomeMsg ;
     return stream;
 }
 
@@ -75,16 +90,16 @@ inline QDataStream& operator>>(QDataStream& stream, LogoutRequestPacket& logoutP
 
 struct ChatMessagePacket {
     QString senderName;
-    QString recipientName;
+    QUuid roomId;
     QString message;
 };
 
 inline QDataStream& operator<<(QDataStream& stream, const ChatMessagePacket& messagePacket) {
-    stream  << messagePacket.senderName << messagePacket.recipientName << messagePacket.message;
+    stream  << messagePacket.senderName << messagePacket.roomId << messagePacket.message;
     return stream;
 }
 inline QDataStream& operator>>(QDataStream& stream, ChatMessagePacket& messagePacket) {
-    stream >> messagePacket.senderName >> messagePacket.recipientName >> messagePacket.message;
+    stream >> messagePacket.senderName >> messagePacket.roomId >> messagePacket.message;
     return stream;
 }
 

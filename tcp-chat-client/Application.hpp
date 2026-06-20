@@ -2,6 +2,7 @@
 #define QT_TCP_CHAT_APPLICATION_HPP
 #include <QObject>
 #include <QStringListModel>
+#include <QStandardItemModel>
 
 #include "Client.hpp"
 
@@ -33,8 +34,20 @@ public:
         return m_model;
     }
 
-    [[nodiscard]] quint8 getRoomId()  {
-        return m_room_id;
+    [[nodiscard]] QUuid getRoomId()  {
+        return m_currentRoomId;
+    }
+
+    void setRoomId(QUuid m_room_id) {
+        this->m_currentRoomId = m_room_id;
+    }
+
+    void setRoomInfos(const QList<RoomInfo> &m_room_infos) {
+        m_roomInfos = m_room_infos;
+    }
+
+    QList<RoomInfo>& getRoomInfos() {
+        return m_roomInfos;
     }
 
 private:
@@ -42,10 +55,10 @@ private:
     Client m_client;
     QStringList m_list;
     QStringListModel m_model;
-    quint8 m_room_id = 0;
-
-    // ChatModel m_chatModel;
-    // UserListModel m_userListModel;
+    QUuid m_currentRoomId;
+    QList<RoomInfo> m_roomInfos;
+    // chatModel m_chatModel;
+    QStandardItemModel m_roomListModel;
 };
 
 #endif //QT_TCP_CHAT_APPLICATION_HPP

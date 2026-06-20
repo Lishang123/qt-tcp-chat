@@ -26,12 +26,12 @@ void Server::handleClientDisconnected() {
     emit clientDisconnected(client->getClientId());
 }
 
-void Server::handleLoginSuccess(QUuid userId, const QString& username, quint8 roomId) {
+void Server::handleLoginSuccess(QUuid userId, const QString& username, QList<RoomInfo>& roomInfos) {
     qInfo() << Q_FUNC_INFO;
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     stream << PacketType::LoginSuccess;
-    stream << LoginSuccessPacket{username, roomId, m_welcome_msg};
+    stream << LoginSuccessPacket{username, roomInfos, m_welcome_msg};
     sendData(m_clients[userId], data);
 }
 
@@ -58,13 +58,14 @@ void Server::removeClient(Client *client) {
     emit clientChanged();
 }
 
-void Server::sendMessageToClient(QUuid senderId, QUuid recipientId, const ChatMessagePacket &packet) {
+void Server::sendMessageToRoom( ChatRoom& chatRoom, const ChatMessagePacket &packet) {
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     stream << PacketType::ChatMessage;
     stream << packet;
-    sendData(m_clients[senderId], data);
-    sendData(m_clients[recipientId], data);
+    for (auto user: chatRoom.getRoomUsers()) {
+      sendData(m_clients[user->user_id], data);
+    }
 }
 
 

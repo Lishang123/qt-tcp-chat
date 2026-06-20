@@ -24,7 +24,7 @@ signals:
 
 public slots:
     void connectToServer(const QString& address, quint16 port);
-    void sendMessage(const QString& message);
+    void sendMessage(const QString& message, QUuid roomId);
 
 private slots:
 

@@ -25,7 +25,7 @@ void Application::addChatMessage(const QString &message) {
 }
 
 void Application::sendMessage(const QString &message) {
-    m_client.sendMessage(message);
+    m_client.sendMessage(message, m_currentRoomId);
 }
 
 void Application::init() {

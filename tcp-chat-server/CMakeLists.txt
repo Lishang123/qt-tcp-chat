@@ -20,6 +20,8 @@ set(PROJECT_SOURCES
         server.cpp
         client.h
         client.cpp
+        RoomManager.cpp
+        RoomManager.hpp
         chatRoom.hpp
         chatRoom.cpp
         Application.hpp
