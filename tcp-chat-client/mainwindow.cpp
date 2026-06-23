@@ -8,6 +8,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
 {
     ui->setupUi(this);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->lblChatbox->setText("");
 
     //connect signals and slots
     connect(ui->textMsg, &QLineEdit::returnPressed, this, &MainWindow::on_btnSend_clicked);
@@ -125,11 +126,9 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index)
 {
     qInfo() << Q_FUNC_INFO << ", index : " << index << "clicked";
     auto chatRoom = m_application->switchRoom(index);
-    if (!chatRoom) {
-        ui->btnSend->setEnabled(false);
-        ui->textMsg->setEnabled(false);
-    };
+    if (!chatRoom) return;
     //update the GUI
+    ui->lblChatbox->setText(chatRoom->m_room_name());
     ui->chatbox->setModel(m_application->getChatModel());
     ui->btnSend->setEnabled(true);
     ui->textMsg->setEnabled(true);
@@ -160,6 +159,11 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
     }
     qCritical() << Q_FUNC_INFO << "Setting chat model...";
     ui->chatbox->setModel(m_application->getChatModel());
+    QModelIndex index = ui->roomView->currentIndex();
+    if (index.isValid()) {
+        QString text = index.data(Qt::DisplayRole).toString();
+        ui->lblChatbox->setText(text);
+    }
     ui->btnSend->setEnabled(true);
     ui->textMsg->setEnabled(true);
     qCritical() << Q_FUNC_INFO << "finished.";

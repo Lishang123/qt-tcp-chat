@@ -97,12 +97,11 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
 }
 
 std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
-    auto item = m_roomListModel.item(index.row());
     // check current chatroom
-    QUuid targetRoomId = item->data(RoomIdRole).toUuid();
+    QUuid targetRoomId = index.data(RoomIdRole).toUuid();
     if (targetRoomId.isNull()) { // request a new direct chat room
         qInfo() << Q_FUNC_INFO << ": requesting a new roomId";
-        QUuid userId = item->data(UserIdRole).toUuid();
+        QUuid userId = index.data(UserIdRole).toUuid();
         if (userId.isNull()) {
             qCritical() << Q_FUNC_INFO << " :This should not happen!";
         }
@@ -118,11 +117,12 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
         if (!m_rooms.contains(targetRoomId)) { // the chatroom hasn't been created yet
             // create a new room
             m_rooms.insert(targetRoomId,
-                std::make_shared<ChatRoom>(targetRoomId, item->text(), 0));
+                std::make_shared<ChatRoom>(targetRoomId, index.data(Qt::DisplayRole).toString(), 0));
         }
         m_ChatModel = m_rooms[targetRoomId]->m_chat_model();
         return m_rooms[targetRoomId];
     }
+
     qInfo() << Q_FUNC_INFO << "you are already in the room you selected!";
     return nullptr;
 }
