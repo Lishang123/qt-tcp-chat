@@ -14,5 +14,7 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core REQUIRED)
 
 add_library(common STATIC
         Packet.hpp
+        ChatMessagePacket.hpp
+        ChatRoomInfo.hpp
 )
 target_link_libraries(common PRIVATE Qt${QT_VERSION_MAJOR}::Core)

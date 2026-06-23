@@ -38,14 +38,15 @@ private slots:
 
     void on_btnDisconnect_clicked();
     void on_btnSend_clicked();
+    void on_roomView_clicked(const QModelIndex &index);
+    void onRoomAcquired(const RoomInfoPacket& roomInfoPacket);
 
 private:
 
     void disableAllBtns();
     void setConnectedBtnStates();
     void setDisconnectedBtnStates();
-    void printMessage(const ChatMessagePacket &messagePacket);
-    void printMessage(const LoginSuccessPacket &loginSuccessPacket);
+    void printLoginMessage(const LoginSuccessPacket &loginSuccessPacket);
 
     void requestLoginInfo();
 

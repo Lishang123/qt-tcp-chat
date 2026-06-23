@@ -4,10 +4,17 @@
 #include <QStringListModel>
 #include <QStandardItemModel>
 
+#include "ChatRoom.hpp"
 #include "Client.hpp"
 
 class Application : public QObject{
     Q_OBJECT
+
+    enum Roles {
+        UserIdRole = Qt::UserRole + 1,
+        RoomIdRole = Qt::UserRole,
+        StatusRole = Qt::UserRole
+    };
 
 public:
 
@@ -18,25 +25,26 @@ public:
     void connectToServer(const QString &address, quint16 port);
     void disconnectFromHost();
 
-    void addChatMessage(const QString &message);
+    void addChatMessage(const QUuid &targetRoomId, const QString &message);
 
     void sendMessage(const QString& message);
 
-    void updateRooms(const QList<RoomInfo>& roomInfos);
+    void updateRooms(const LoginSuccessPacket & loginSuccessPacket);
 
-    void addUser(const QUuid &roomId, const QString &userName);
+    void addUser(const QUuid &roomId, const QUuid &userId, const QString &userName);
     void removeUser(const LogoutNotificationPacket &logoutNotificationPacket);
 
+    void processMessage(const ChatMessagePacket& chatMessagePacket);
+
+    bool setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool switchRoomLater);
+
+    std::shared_ptr<ChatRoom> switchRoom(const QModelIndex &index);
 
     [[nodiscard]] Client& getClient() {
         return m_client;
     }
 
-    [[nodiscard]] QStringList& getList() {
-        return m_list;
-    }
-
-    [[nodiscard]] QStringListModel& getChatModel() {
+    [[nodiscard]] QStandardItemModel* getChatModel() {
         return m_ChatModel;
     }
 
@@ -60,27 +68,24 @@ public:
         this->m_currentRoomId = m_room_id;
     }
 
-    // void setRoomInfos(const QList<RoomInfo> &m_room_infos) {
-    //     m_roomInfos = m_room_infos;
-    // }
-    //
-    // QList<RoomInfo>& getRoomInfos() {
-    //     return m_roomInfos;
-    // }
+    void setUserId(QUuid userId) {
+        m_client.setClientId(userId);
+    }
+
+signals:
+    // void roomSwitched(const QModelIndex &index, ChatRoom &chatRoom);
 
 public slots:
     void disconnectFromServer();
 
-
 private:
 
     Client m_client;
-    QStringList m_list;
-    QStringListModel m_ChatModel;
+    //QStringList m_list;
+    QStandardItemModel* m_ChatModel;
     QUuid m_publicRoomId;
     QUuid m_currentRoomId;
-    // QList<RoomInfo> m_roomInfos;
-    // chatModel m_chatModel;
+    QMap<QUuid, std::shared_ptr<ChatRoom>> m_rooms;
     QStandardItemModel m_roomListModel;
 };
 

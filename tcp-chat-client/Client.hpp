@@ -4,7 +4,9 @@
 #include <QTcpSocket>
 #include <QMessageBox>
 #include "../common/Packet.hpp"
+#include "../common/ChatMessagePacket.hpp"
 
+struct ChatMessagePacket;
 
 class Client : public QObject {
     Q_OBJECT
@@ -12,6 +14,7 @@ class Client : public QObject {
 public:
     explicit Client(QObject *parent = nullptr);
     void sendLoginRequest(const LoginRequestPacket &loginRequestPacket);
+    void sendRoomRequest(const RoomRequestPacket& roomRequestPacket);
     void disconnectFromHost();
 
 signals:
@@ -23,6 +26,7 @@ signals:
     void loggedOut();
     void messageReceived(const ChatMessagePacket& chatMessagePacket);
     void errorOccured(const QString& errorMessage);
+    void roomAcquired(const RoomInfoPacket& roomAcquiredPacket);
 
 public slots:
     void connectToServer(const QString& address, quint16 port);
@@ -47,8 +51,12 @@ public:
         return m_name;
     }
 
-private:
+    void setClientId(QUuid clientId) {
+        m_clientId = clientId;
+    }
 
+private:
+    QUuid m_clientId;
     QString m_name;
     QTcpSocket m_socket;
 

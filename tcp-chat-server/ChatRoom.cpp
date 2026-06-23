@@ -1,9 +1,8 @@
 #include "ChatRoom.hpp"
 
 
-ChatRoom::ChatRoom(QUuid roomId, const QString &roomName, QObject* parent ):
-    m_roomID(roomId), m_roomName(roomName), QObject(parent) {
-}
+ChatRoom::ChatRoom(RoomType roomType, QUuid roomId, const QString &roomName):
+    m_roomType(roomType), m_roomID(roomId), m_roomName(roomName) { }
 
 void ChatRoom::setWelcomeMsg(const QString &newWelcomeMsg) {
     m_welcome_msg = newWelcomeMsg;
@@ -12,7 +11,7 @@ void ChatRoom::setWelcomeMsg(const QString &newWelcomeMsg) {
 RoomInfo ChatRoom::getRoomInfo() {
     qInfo() << Q_FUNC_INFO;
     //auto usernames = m_users.usernames();
-    return RoomInfo{m_roomID, m_roomName};
+    return RoomInfo{m_roomType, m_roomID, m_roomName, m_users.keys()};
 }
 
 size_t ChatRoom::getClientsCount() {

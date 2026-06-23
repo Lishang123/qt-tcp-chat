@@ -29,13 +29,13 @@ signals:
 
 public slots:
     void handleClientDisconnected();
-    void handleLoginSuccess(QUuid userId, const QString& username, QList<RoomInfo>& roomInfos);
+    void handleLoginSuccess(QUuid userId, const QString& username, const QMap<QUuid, QString>& users, QList<RoomInfo>& roomInfos);
     void handleLoginFailed(QUuid userId, const QString& errorMsg);
     // void handleUserRemoved(QUuid clientId);
     void sendMessageToRoom(ChatRoom& chatRoom, const ChatMessagePacket &packet);
     void broadcast(const ChatMessagePacket& packet);
     void onDataReceived(const QByteArray & data);
-
+    void sendRoomInfo(QUuid userId, const RoomInfo& roomInfo);
 
 protected:
     void incomingConnection(qintptr handle) override;

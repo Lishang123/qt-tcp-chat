@@ -26,15 +26,17 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
 
     connect(&m_application->getClient(), &Client::messageReceived, this, &MainWindow::onMessageReceived);
     connect(&m_application->getClient(), &Client::errorOccured, this, &MainWindow::onError);
+    connect(&m_application->getClient(), &Client::roomAcquired, this, &MainWindow::onRoomAcquired);
+
 
 
     //enable buttons
     ui->btnConnect->setEnabled(false);
     ui->btnDisconnect->setEnabled(true);
-    ui->btnSend->setEnabled(true);
-
-    //set string list model
-    ui->chatbox->setModel(&m_application->getChatModel());
+    ui->btnSend->setEnabled(false);
+    ui->textMsg->setEnabled(false);
+    //set room model
+    //ui->chatbox->setModel(&m_application->getChatModel());
     ui->roomView->setModel(&m_application->getRoomListModel());
 
     QString username = m_application->getClient().getUserName();
@@ -63,7 +65,7 @@ void MainWindow::on_btnSend_clicked()
 }
 
 void MainWindow::addUser(const LoginNotificationPacket &loginNotificationPacket) {
-    m_application->addUser(loginNotificationPacket.userId, loginNotificationPacket.username);
+    m_application->addUser(QUuid(), loginNotificationPacket.userId, loginNotificationPacket.username);
 }
 
 void MainWindow::removeUser(const LogoutNotificationPacket &logoutNotificationPacket) {
@@ -83,16 +85,14 @@ void MainWindow::onClientDisconnected() {
 }
 
 void MainWindow::onMessageReceived(const ChatMessagePacket& chatMessagePacket) {
-    printMessage(chatMessagePacket);
+    //create room, update room message
+    m_application->processMessage(chatMessagePacket);
+    if (chatMessagePacket.roomId == m_application->getCurrentRoomId())
+        ui->chatbox->scrollToBottom();
 }
 
-void MainWindow::printMessage(const ChatMessagePacket &messagePacket) {
-    m_application->addChatMessage(messagePacket.senderName + ":  " + messagePacket.message);
-    ui->chatbox->scrollToBottom();
-}
-
-void MainWindow::printMessage(const LoginSuccessPacket &loginSuccessPacket) {
-    m_application->addChatMessage(loginSuccessPacket.username + ",  " + loginSuccessPacket.welcomeMsg);
+void MainWindow::printLoginMessage(const LoginSuccessPacket &loginSuccessPacket) {
+    //TODO: print welcome message
     ui->chatbox->scrollToBottom();
 }
 
@@ -136,4 +136,48 @@ void MainWindow::requestLoginInfo() {
     }
 }
 
+void MainWindow::on_roomView_clicked(const QModelIndex &index)
+{
+    qInfo() << Q_FUNC_INFO << ", index : " << index << "clicked";
+    auto chatRoom = m_application->switchRoom(index);
+    if (!chatRoom) {
+        ui->btnSend->setEnabled(false);
+        ui->textMsg->setEnabled(false);
+    };
+    //update the GUI
+    ui->chatbox->setModel(m_application->getChatModel());
+    ui->btnSend->setEnabled(true);
+    ui->textMsg->setEnabled(true);
+}
+
+void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
+    qInfo() << Q_FUNC_INFO;
+    RoomInfo roomInfo = roomInfoPacket.roomInfo;
+    switch (roomInfo.roomType) {
+        case RoomType::DirectChat: {
+            auto userIds = roomInfo.userIds;
+            assert(userIds.count() == 2);
+            if (!m_application->setRoomIdOnUser(roomInfo.roomId, userIds[1], true)) {
+                qCritical() << Q_FUNC_INFO << "Should not happend!";
+                return;
+            }
+            break;
+        }
+        case RoomType::Chatgroup: {
+            qCritical() << Q_FUNC_INFO << "handle chatGroup here!";
+            break;
+        }
+        case RoomType::Self:
+        case RoomType::Public:
+        default: {
+            qInfo() << Q_FUNC_INFO << "This shouldn't happen!";
+        }
+    }
+    qCritical() << Q_FUNC_INFO << "Setting chat model...";
+    ui->chatbox->setModel(m_application->getChatModel());
+    ui->btnSend->setEnabled(true);
+    ui->textMsg->setEnabled(true);
+    qCritical() << Q_FUNC_INFO << "finished.";
+
+}
 

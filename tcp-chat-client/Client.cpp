@@ -88,6 +88,12 @@ void Client::OnReadyRead()
             emit messageReceived(messagePacket);
             break;
         }
+        case PacketType::RoomAcquired: {
+            RoomInfoPacket roomInfoPacket;
+            stream >> roomInfoPacket;
+            emit roomAcquired(roomInfoPacket);
+            break;
+        }
         default:
             qCritical() << Q_FUNC_INFO << "\tUnknown packet type:" << packetType;
             break;
@@ -115,6 +121,16 @@ void Client::sendLoginRequest(const LoginRequestPacket &loginRequestPacket) {
     }
 }
 
+void Client::sendRoomRequest(const RoomRequestPacket &roomRequestPacket) {
+    QByteArray data;
+    QDataStream out(&data, QIODevice::WriteOnly);
+    out << PacketType::RoomRequest;
+    out << roomRequestPacket;
+    if (!m_socket.write(data)) {
+        qCritical() << Q_FUNC_INFO << "\tCannot send room reqeust:\t" << data << m_socket.errorString() ;
+    }
+}
+
 void Client::disconnectFromHost() {
     m_socket.disconnectFromHost();
 }
@@ -124,7 +140,8 @@ void Client::sendMessage(const QString &message, QUuid roomId) {
     QByteArray data;
     QDataStream out(&data, QIODevice::WriteOnly);
     out << PacketType::ChatMessage;
-    out << ChatMessagePacket{m_name, roomId, message};
+    out << ChatMessagePacket{roomId, m_clientId, QUuid::createUuid(),
+        QDateTime::currentDateTime(), m_name, message};
     if (!m_socket.write(data)) {
         qCritical() << "cannot send message: " << data << m_socket.errorString();
     };

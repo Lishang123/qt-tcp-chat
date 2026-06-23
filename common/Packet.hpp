@@ -1,6 +1,9 @@
 #ifndef TCP_CHAT_SERVER_MESSAGE_HPP
 #define TCP_CHAT_SERVER_MESSAGE_HPP
 #include <QUuid>
+#include <QMap>
+
+#include "ChatRoomInfo.hpp"
 
 enum PacketType : quint8 {
     LoginRequest = 1,
@@ -9,7 +12,8 @@ enum PacketType : quint8 {
     NotifyLogin = 13,
     NotifyLogout = 14,
 
-    LogoutRequest = 2,
+    RoomRequest = 2,
+    RoomAcquired = 21,
 
     ChatMessage = 3,
 };
@@ -30,35 +34,22 @@ inline QDataStream& operator>>(QDataStream& stream, LoginRequestPacket& loginPac
     return stream;
 }
 
-struct RoomInfo {
-    QUuid roomId;
-    QString roomName;
-    // QList<QString> usernames;
-};
-
-inline QDataStream& operator<<(QDataStream& stream, const RoomInfo& roomInfo) {
-    stream  << roomInfo.roomId << roomInfo.roomName; // << roomInfo.usernames;
-    return stream;
-}
-
-inline QDataStream& operator>>(QDataStream& stream, RoomInfo& roomInfo) {
-    stream  >> roomInfo.roomId >> roomInfo.roomName; // >> roomInfo.usernames;
-    return stream;
-}
 
 struct LoginSuccessPacket {
+    QUuid userId;
     QString username;
-    QList<RoomInfo> roomInfos;
+    QList<RoomInfo> roomInfos; // chat rooms
+    QMap<QUuid, QString> contacts; // users without chat rooms
     QString welcomeMsg;
 };
 
 inline QDataStream& operator<<(QDataStream& stream, const LoginSuccessPacket& loginPacket) {
-    stream << loginPacket.username << loginPacket.roomInfos << loginPacket.welcomeMsg ;
+    stream << loginPacket.userId << loginPacket.username << loginPacket.roomInfos  << loginPacket.contacts << loginPacket.welcomeMsg ;
     return stream;
 }
 
 inline QDataStream& operator>>(QDataStream& stream, LoginSuccessPacket& loginPacket) {
-    stream >> loginPacket.username >> loginPacket.roomInfos >> loginPacket.welcomeMsg ;
+    stream >> loginPacket.userId >> loginPacket.username >> loginPacket.roomInfos >> loginPacket.contacts >> loginPacket.welcomeMsg ;
     return stream;
 }
 
@@ -111,6 +102,38 @@ inline QDataStream& operator>>(QDataStream& stream, LogoutNotificationPacket& lo
 }
 
 
+struct RoomRequestPacket {
+    RoomType roomType;
+    QList<QUuid> memberIds;
+    QString roomName;
+};
+
+inline QDataStream& operator<<(QDataStream& stream, const RoomRequestPacket& roomPacket) {
+    stream  << roomPacket.roomType << roomPacket.memberIds << roomPacket.roomName;
+    return stream;
+}
+
+inline QDataStream& operator>>(QDataStream& stream, RoomRequestPacket& roomPacket) {
+    stream  >> roomPacket.roomType >> roomPacket.memberIds >> roomPacket.roomName;
+    return stream;
+}
+
+struct RoomInfoPacket {
+    RoomInfo roomInfo;
+};
+
+inline QDataStream& operator<<(QDataStream& stream, const RoomInfoPacket& roomInfo) {
+    stream  << roomInfo.roomInfo;
+    return stream;
+}
+
+inline QDataStream& operator>>(QDataStream& stream, RoomInfoPacket& roomInfo) {
+    stream  >> roomInfo.roomInfo;
+    return stream;
+}
+
+
+
 struct LogoutRequestPacket {
     QString username;
 };
@@ -124,20 +147,6 @@ inline QDataStream& operator>>(QDataStream& stream, LogoutRequestPacket& logoutP
     return stream;
 }
 
-struct ChatMessagePacket {
-    QString senderName;
-    QUuid roomId;
-    QString message;
-};
-
-inline QDataStream& operator<<(QDataStream& stream, const ChatMessagePacket& messagePacket) {
-    stream  << messagePacket.senderName << messagePacket.roomId << messagePacket.message;
-    return stream;
-}
-inline QDataStream& operator>>(QDataStream& stream, ChatMessagePacket& messagePacket) {
-    stream >> messagePacket.senderName >> messagePacket.roomId >> messagePacket.message;
-    return stream;
-}
 
 
 

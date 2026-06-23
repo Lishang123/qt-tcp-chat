@@ -38,12 +38,12 @@ void Server::handleClientDisconnected() {
     emit clientDisconnected(client->getClientId());
 }
 
-void Server::handleLoginSuccess(QUuid userId, const QString& username, QList<RoomInfo>& roomInfos) {
+void Server::handleLoginSuccess(QUuid userId, const QString& username, const QMap<QUuid, QString>& users, QList<RoomInfo>& roomInfos) {
     qInfo() << Q_FUNC_INFO;
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     stream << PacketType::LoginSuccess;
-    stream << LoginSuccessPacket{username, roomInfos, m_welcome_msg};
+    stream << LoginSuccessPacket{userId, username, roomInfos, users, m_welcome_msg};
     sendData(m_clients[userId], data);
     if (m_clients.count() > 1) {
         QByteArray notifyData;
@@ -137,6 +137,15 @@ void Server::onDataReceived(const QByteArray & data) {
         return;
     };
     emit messageReceived(client->getClientId(), data);
+}
+
+void Server::sendRoomInfo(const QUuid userId, const RoomInfo &roomInfo) {
+    RoomInfoPacket roomInfoPacket{roomInfo};
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::RoomAcquired;
+    stream << roomInfoPacket;
+    sendData(m_clients[userId], data);
 }
 
 void Server::setWelcome_msg(const QString &newWelcome_msg) {

@@ -17,6 +17,7 @@ void Application::init() {
 
     // send chat message
     connect(&m_roomManager, &RoomManager::sendMessageToRoom, &m_server, &Server::sendMessageToRoom);
+    connect(&m_roomManager, &RoomManager::roomCreated, &m_server, &Server::sendRoomInfo);
 
     // connect(&m_server, &Server::messageReceived,
     //     this, [] {

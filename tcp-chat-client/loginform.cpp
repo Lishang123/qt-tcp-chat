@@ -26,14 +26,15 @@ void LoginForm::onClientConnected() {
 }
 
 void LoginForm::onClientLoggedIn(const LoginSuccessPacket &loginSuccessPacket) {
+    m_application->setUserId(loginSuccessPacket.userId);
     auto it = std::ranges::find_if(loginSuccessPacket.roomInfos, [](auto& roomInfo) {
         return roomInfo.roomName == "public";
     });
     if (it != loginSuccessPacket.roomInfos.end()) {
         m_application->setPublicRoomId(it->roomId);
-        m_application->setCurrentRoomId(it->roomId);
+        //m_application->setCurrentRoomId(it->roomId); // Start from black!
     }
-    m_application->updateRooms(loginSuccessPacket.roomInfos);
+    m_application->updateRooms(loginSuccessPacket);
     accept();
 }
 

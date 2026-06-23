@@ -4,6 +4,7 @@
 #include <ranges>
 #include <qobject.h>
 #include "../common/Packet.hpp"
+#include "../common/ChatMessagePacket.hpp"
 #include "client.h"
 
 struct User {
@@ -23,21 +24,20 @@ struct User {
 };
 
 struct Users : public QMap<QUuid,std::shared_ptr<User>>{
-    QList<QString> usernames() {
-        QList<QString> usernames;
+    QMap<QUuid, QString> getUserInfos() {
+        QMap<QUuid, QString> userInfos;
         foreach(const auto& user, values()) {
-            usernames.append(user->username);
+            userInfos.insert(user->user_id, user->username);
         }
-        return usernames;
+        return userInfos;
     }
 };
 
-class ChatRoom : public QObject {
 
-    Q_OBJECT
+class ChatRoom {
 
 public:
-    explicit ChatRoom(QUuid roomId, const QString& roomName, QObject* parent = nullptr );
+    explicit ChatRoom(RoomType roomType, QUuid roomId, const QString& roomName);
 
     size_t getClientsCount();
 
@@ -54,16 +54,12 @@ public:
         return m_roomID;
     }
 
+    [[nodiscard]] const RoomType & getRoomType() const {
+        return m_roomType;
+    }
+
     void setWelcomeMsg(const QString &newWelcomeMsg);
     RoomInfo getRoomInfo();
-
-signals:
-    void clientChanged();
-    void userAdded(QUuid userId, const QString& username, quint8 roomId);
-    void loginFailed(QUuid userId, const QString& errorMsg);
-    void userRemoved(QUuid userId);
-
-public slots:
     void removeUser(QUuid userId);
 
 private:
@@ -74,11 +70,11 @@ public:
     }
 
 private:
+    RoomType m_roomType;
     QString m_welcome_msg;
     QString m_roomName;
     QUuid m_roomID;
     Users m_users;
-
 };
 
 

@@ -1,8 +1,7 @@
 #include "Application.hpp"
 
 
-Application::Application(QObject *parent) : QObject(parent) {
-    m_ChatModel.setStringList(m_list);
+Application::Application(QObject *parent) : QObject(parent), m_ChatModel(nullptr) {
 }
 
 void Application::sendLoginRequest(const LoginRequestPacket &loginRequestPacket) {
@@ -18,45 +17,52 @@ void Application::disconnectFromHost() {
     m_client.disconnectFromHost();
 }
 
-void Application::addChatMessage(const QString &message) {
-    m_list.append(message);
-    m_ChatModel.setStringList(m_list);
+void Application::addChatMessage(const QUuid &targetRoomId, const QString &message) {
+    m_rooms[targetRoomId]->m_chat_model()->appendRow(new QStandardItem(message));
+    if (targetRoomId != m_currentRoomId) {
+        //update the unread status and the chat model in that room
+        m_rooms[targetRoomId]->incrementUnreadCount();
+        //TODO: update UI: icon...
+    }
 }
 
 void Application::sendMessage(const QString &message) {
-    m_client.sendMessage(message, m_publicRoomId);
+    m_client.sendMessage(message, m_currentRoomId);
 }
 
-void Application::updateRooms(const QList<RoomInfo>& room_infos) {
+void Application::updateRooms(const LoginSuccessPacket & loginSuccessPacket) {
     //This line keeps the program running forever!!
     //m_roomListModel.appendRow(m_roomListModel.invisibleRootItem());
 
-    // print the public room
-    foreach(auto roomInfo, room_infos) {
-        if(roomInfo.roomId == m_publicRoomId) {
-            addUser(roomInfo.roomId, roomInfo.roomName);
-            break;
+    // add rooms:
+    auto roomInfos = loginSuccessPacket.roomInfos;
+    // add the public room to the sidebar
+    addUser(m_publicRoomId, QUuid(), "public");
+
+    //add the rest of the rooms
+    foreach(auto roomInfo, roomInfos) {
+        if(roomInfo.roomId == m_publicRoomId || roomInfo.roomId == m_currentRoomId) continue;
+        if (roomInfo.roomType == RoomType::Self) {
+            addUser(roomInfo.roomId, roomInfo.roomId, roomInfo.roomName);
+        }
+        if (roomInfo.roomType == RoomType::DirectChat) {
+            addUser(roomInfo.roomId, QUuid() , roomInfo.roomName);
         }
     }
-    // // print the top room if not public
-    // if (m_publicRoomId != m_currentRoomId) {
-    //     foreach(auto roomInfo, room_infos) {
-    //         if(roomInfo.roomId == m_currentRoomId) {
-    //             addUser(roomInfo.roomId, roomInfo.roomName);
-    //             break;
-    //         }
-    //     }
-    // }
-    //print the rest
-    foreach(auto roomInfo, room_infos) {
-        if(roomInfo.roomId == m_publicRoomId || roomInfo.roomId == m_currentRoomId) continue;
-        addUser(roomInfo.roomId, roomInfo.roomName);
+
+    // add users without rooms
+    for (const auto& [userId, userName]: loginSuccessPacket.contacts.asKeyValueRange()) {
+        // qInfo() << chatRoom->getRoomId() << chatRoom->getRoomName();
+        // qInfo() << Q_FUNC_INFO << chatRoom->getRoomInfo().roomId;
+        addUser(QUuid(), userId, userName);
     }
 }
 
-void Application::addUser(const QUuid &roomId, const QString &userName) {
+void Application::addUser(const QUuid &roomId, const QUuid &userId, const QString &userName) {
+    // TODO: replace it with subclass of QAbstractItem
     QStandardItem* item = new QStandardItem(userName);
-    item->setData(roomId, Qt::UserRole + 1);
+    item->setData(roomId, RoomIdRole);
+    item->setData(userId, UserIdRole);
     m_roomListModel.appendRow(item);
 }
 
@@ -64,15 +70,85 @@ void Application::addUser(const QUuid &roomId, const QString &userName) {
 void Application::removeUser(const LogoutNotificationPacket &logoutNotificationPacket) {
     for (int row = 0; row < m_roomListModel.rowCount(); ++row) {
         auto item = m_roomListModel.item(row);
-        if (item->data(Qt::UserRole + 1) == logoutNotificationPacket.userId) {
+        if (item->data(UserIdRole) == logoutNotificationPacket.userId) {
             m_roomListModel.removeRow(row);
             break;
         }
     }
 }
 
+void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
+    qInfo() << Q_FUNC_INFO;
+    QUuid targetRoomId = chatMessagePacket.roomId;
+    // If room is not created, then create the room
+    if (!m_rooms.contains(targetRoomId)) {
+        qInfo() << Q_FUNC_INFO << "add new RoomId " << chatMessagePacket.roomId;
+        QString roomName = (targetRoomId == m_publicRoomId ? "public" : chatMessagePacket.senderName);
+
+        if (roomName != "public") {
+            setRoomIdOnUser(targetRoomId, chatMessagePacket.senderId, false);
+        }
+
+        m_rooms.insert(targetRoomId,
+                std::make_shared<ChatRoom>(targetRoomId, roomName, 0));
+    }
+    // if the message is sent to the current room, print the message here
+    addChatMessage(targetRoomId, chatMessagePacket.getMessage());
+}
+
+std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
+    auto item = m_roomListModel.item(index.row());
+    // check current chatroom
+    QUuid targetRoomId = item->data(RoomIdRole).toUuid();
+    if (targetRoomId.isNull()) { // request a new direct chat room
+        qInfo() << Q_FUNC_INFO << ": requesting a new roomId";
+        QUuid userId = item->data(UserIdRole).toUuid();
+        if (userId.isNull()) {
+            qCritical() << Q_FUNC_INFO << " :This should not happen!";
+        }
+        RoomRequestPacket roomRequestPacket{RoomType::DirectChat,{userId}, ""};
+        m_client.sendRoomRequest(roomRequestPacket);
+        return nullptr;
+    }
+
+    if ( targetRoomId != m_currentRoomId) {
+        qInfo() << Q_FUNC_INFO << ": setting the current roomId " << targetRoomId;
+        m_currentRoomId = targetRoomId;
+        // switch the chat room, retrieve the chat history
+        if (!m_rooms.contains(targetRoomId)) { // the chatroom hasn't been created yet
+            // create a new room
+            m_rooms.insert(targetRoomId,
+                std::make_shared<ChatRoom>(targetRoomId, item->text(), 0));
+        }
+        m_ChatModel = m_rooms[targetRoomId]->m_chat_model();
+        return m_rooms[targetRoomId];
+    }
+    qInfo() << Q_FUNC_INFO << "you are already in the room you selected!";
+    return nullptr;
+}
+
+
+bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool switchRoomLater) {
+    qInfo() << Q_FUNC_INFO;
+    for (int row = 0; row < m_roomListModel.rowCount(); ++row) {
+        auto item = m_roomListModel.item(row);
+        if (item->data(UserIdRole) == userId) {
+            item->setData(roomId, RoomIdRole);
+            if (switchRoomLater)
+                return switchRoom(item->index()) != nullptr;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void Application::disconnectFromServer() {
     m_client.disconnectFromHost();
 }
+//
+// void Application::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
+//
+// }
 
 
