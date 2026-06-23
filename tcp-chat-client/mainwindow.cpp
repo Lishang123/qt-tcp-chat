@@ -9,13 +9,6 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     ui->setupUi(this);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    for (int i = 0; i < ui->horizontalLayout->count(); ++i) {
-        QLayoutItem* item = ui->horizontalLayout->itemAt(i);
-
-        if (QWidget* w = item->widget()) {
-            w->hide();
-        }
-    }
     //connect signals and slots
     connect(ui->textMsg, &QLineEdit::returnPressed, this, &MainWindow::on_btnSend_clicked);
 
@@ -31,8 +24,6 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
 
 
     //enable buttons
-    ui->btnConnect->setEnabled(false);
-    ui->btnDisconnect->setEnabled(true);
     ui->btnSend->setEnabled(false);
     ui->textMsg->setEnabled(false);
     //set room model
@@ -98,22 +89,16 @@ void MainWindow::printLoginMessage(const LoginSuccessPacket &loginSuccessPacket)
 
 void MainWindow::disableAllBtns()
 {
-    ui->btnConnect->setEnabled(false);
-    ui->btnDisconnect->setEnabled(false);
     ui->btnSend->setEnabled(false);
 }
 
 void MainWindow::setConnectedBtnStates()
 {
-    ui->btnConnect->setEnabled(false);
-    ui->btnDisconnect->setEnabled(true);
     ui->btnSend->setEnabled(true);
 }
 
 void MainWindow::setDisconnectedBtnStates()
 {
-    ui->btnConnect->setEnabled(true);
-    ui->btnDisconnect->setEnabled(false);
     ui->btnSend->setEnabled(false);
 }
 
