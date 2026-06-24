@@ -3,23 +3,12 @@
 #include <QObject>
 #include <QStringListModel>
 #include <QStandardItemModel>
-
 #include "ChatRoom.hpp"
 #include "Client.hpp"
+#include "ChatRoomDelegate.hpp"
 
 class Application : public QObject{
     Q_OBJECT
-
-    enum Roles {
-        UserIdRole = Qt::UserRole + 1,
-        RoomIdRole = Qt::UserRole,
-        StatusRole = Qt::UserRole
-    };
-
-    enum ItemType {
-        Category,
-        Room,
-    };
 
 public:
 
@@ -79,17 +68,27 @@ public:
         m_client.setClientId(userId);
     }
 
+    void setIconSize(QSize size) {
+        m_iconSize = size;
+    }
+
 signals:
     // void roomSwitched(const QModelIndex &index, ChatRoom &chatRoom);
+    void roomStatusChanged();
 
 public slots:
     void disconnectFromServer();
 
 private:
+    bool setUnreadBadge(const QUuid &roomId, bool unread);
+    void setUnreadBadge(QStandardItem* item, bool unread);
+    QStandardItem* getRoomItem(const QUuid &roomId);
+    QStandardItem * getUserItem(const QUuid &userId);
 
     Client m_client;
     //QStringList m_list;
     QStandardItemModel* m_ChatModel;
+    QSize m_iconSize;
     QUuid m_publicRoomId;
     QUuid m_currentRoomId;
     QMap<QUuid, std::shared_ptr<ChatRoom>> m_rooms;

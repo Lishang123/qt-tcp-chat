@@ -28,7 +28,7 @@ void Application::disconnectFromHost() {
 }
 
 void Application::addChatMessage(const QUuid &targetRoomId, const QString &message) {
-    m_rooms[targetRoomId]->m_chat_model()->appendRow(new QStandardItem(message));
+    m_rooms[targetRoomId]->getChatModel()->appendRow(new QStandardItem(message));
     if (targetRoomId != m_currentRoomId) {
         //update the unread status and the chat model in that room
         m_rooms[targetRoomId]->incrementUnreadCount();

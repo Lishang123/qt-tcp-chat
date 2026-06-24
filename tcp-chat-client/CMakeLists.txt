@@ -21,6 +21,8 @@ set(PROJECT_SOURCES
         Client.hpp
         ChatRoom.cpp
         ChatRoom.hpp
+        ChatRoomDelegate.hpp
+        ChatRoomDelegate.cpp
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui

@@ -127,6 +127,7 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
                 qCritical() << Q_FUNC_INFO << "Unknown room type!";
         }
     }
+    qInfo() << Q_FUNC_INFO << "emiting loginSuccess";
     emit loginSuccess(clientId, packet.username, userInfos, roomInfos);
     return true;
 }

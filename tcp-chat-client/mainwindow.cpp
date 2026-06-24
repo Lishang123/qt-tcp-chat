@@ -12,11 +12,15 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     auto font = ui->roomView->font();
     font.setPointSize(16);
     ui->roomView->setFont(font);
-    ui->lblChatbox->setText("");
+    ui->roomView->setItemDelegate(new ChatRoomDelegate(ui->roomView));
 
+    m_application->setIconSize(ui->roomView->iconSize());
+    ui->lblChatbox->setText("");
 
     //connect signals and slots
     connect(ui->textMsg, &QLineEdit::returnPressed, this, &MainWindow::on_btnSend_clicked);
+
+    connect(m_application, &Application::roomStatusChanged, this, &MainWindow::onRoomStatusChanged);
 
     //connect(&m_application->getClient(), &Client::connecloggedInted, this, &MainWindow::onClientConnected);
     connect(&m_application->getClient(), &Client::disconnected, this, &MainWindow::onClientDisconnected);
@@ -28,13 +32,13 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     connect(&m_application->getClient(), &Client::roomAcquired, this, &MainWindow::onRoomAcquired);
 
 
-
     //enable buttons
     ui->btnSend->setEnabled(false);
     ui->textMsg->setEnabled(false);
     //set room model
     //ui->chatbox->setModel(&m_application->getChatModel());
     ui->roomView->setModel(&m_application->getRoomListModel());
+    ui->roomView->expandAll();
 
     QString username = m_application->getClient().getUserName();
     setWindowTitle("Chat Client " + username);
@@ -45,13 +49,13 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
-void MainWindow::on_btnDisconnect_clicked()
-{
-    qInfo() << "disconnect clicked";
-    disableAllBtns();
-    m_application->disconnectFromHost();
-}
+//
+// void MainWindow::on_btnDisconnect_clicked()
+// {
+//     qInfo() << "disconnect clicked";
+//     disableAllBtns();
+//     m_application->disconnectFromHost();
+// }
 
 
 void MainWindow::on_btnSend_clicked()
@@ -133,7 +137,7 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index)
     auto chatRoom = m_application->switchRoom(index);
     if (!chatRoom) return;
     //update the GUI
-    ui->lblChatbox->setText(chatRoom->m_room_name());
+    ui->lblChatbox->setText(chatRoom->getRoomName());
     ui->chatbox->setModel(m_application->getChatModel());
     ui->btnSend->setEnabled(true);
     ui->textMsg->setEnabled(true);
@@ -173,5 +177,10 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
     ui->textMsg->setEnabled(true);
     qCritical() << Q_FUNC_INFO << "finished.";
 
+}
+
+void MainWindow::onRoomStatusChanged() {
+    qInfo() << Q_FUNC_INFO;
+    ui->roomView->viewport()->update();
 }
 

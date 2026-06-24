@@ -9,19 +9,19 @@ class ChatRoom {
 public:
     ChatRoom(QUuid id, QString roomName, uint16_t unreadCount);
 
-    [[nodiscard]] QUuid m_room_id() const {
+    [[nodiscard]] QUuid getRoomId() const {
         return m_roomId;
     }
 
-    [[nodiscard]] QString m_room_name() const {
+    [[nodiscard]] QString getRoomName() const {
         return m_roomName;
     }
 
-    [[nodiscard]] QStandardItemModel* m_chat_model() {
+    [[nodiscard]] QStandardItemModel* getChatModel() {
         return &m_chatModel;
     }
 
-    [[nodiscard]] u_int16_t m_unread_count() const {
+    [[nodiscard]] u_int16_t getUnreadCount() const {
         return m_unreadCount;
     }
 

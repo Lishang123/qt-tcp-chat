@@ -33,13 +33,15 @@ public slots:
     void onError(const QString& errorMessage);
     void addUser(const LoginNotificationPacket &loginNotificationPacket);
     void removeUser(const LogoutNotificationPacket &logoutNotificationPacket);
+    //void addUnreadStatus(QStandardItem* item);
 
 private slots:
 
-    void on_btnDisconnect_clicked();
+    //void on_btnDisconnect_clicked();
     void on_btnSend_clicked();
     void on_roomView_clicked(const QModelIndex &index);
     void onRoomAcquired(const RoomInfoPacket& roomInfoPacket);
+    void onRoomStatusChanged();
 
 private:
 
