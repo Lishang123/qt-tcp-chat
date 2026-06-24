@@ -73,6 +73,7 @@ void Application::addUser(const QUuid &roomId, const QUuid &userId, const QStrin
     QStandardItem* item = new QStandardItem(userName);
     item->setData(roomId, RoomIdRole);
     item->setData(userId, UserIdRole);
+    item->setIcon(QIcon(":/icons/icons/mann-avatar.png"));
     m_roomListModel.item(1)->appendRow(item);
 }
 
@@ -80,6 +81,7 @@ void Application::addChatGroup(const QUuid &roomId, const QString &groupName) {
     QStandardItem* item = new QStandardItem(groupName);
     item->setData(roomId, RoomIdRole);
     item->setData(QUuid(), UserIdRole);
+    item->setIcon(QIcon(":/icons/icons/globe.png"));
     m_roomListModel.item(0)->appendRow(item);
 }
 

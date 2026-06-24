@@ -8,7 +8,12 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
 {
     ui->setupUi(this);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->roomView->setIconSize(QSize(26, 26));
+    auto font = ui->roomView->font();
+    font.setPointSize(16);
+    ui->roomView->setFont(font);
     ui->lblChatbox->setText("");
+
 
     //connect signals and slots
     connect(ui->textMsg, &QLineEdit::returnPressed, this, &MainWindow::on_btnSend_clicked);
