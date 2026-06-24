@@ -15,8 +15,8 @@ public:
 
 signals:
     void clientChanged();
-
-    void loginSuccess(QUuid userId, const QString& username, const QMap<QUuid, QString>& users, QList<RoomInfo>& roomInfos);
+    void changeClientId(QUuid clientId, QUuid newClientId);
+    void loginSuccess(QUuid userId, const QString& username, const QMap<QUuid, UserInfo>& users, QList<RoomInfo>& roomInfos);
     void loginFailed(QUuid userId, const QString& errorMsg);
     void sendMessageToRoom(ChatRoom& chatRoom, const ChatMessagePacket &packet);
     //void userRemoved(QUuid userId);
@@ -27,6 +27,7 @@ public slots:
     void handleMessage(QUuid senderId, const QByteArray & data);
     bool handleLoginRequest(QUuid clientId, LoginRequestPacket &packet);
     void removeUser(QUuid userId);
+    void logoutUser(QUuid userId);
 
 private:
     std::shared_ptr<User> findUserByName(QString &username);

@@ -34,12 +34,11 @@ inline QDataStream& operator>>(QDataStream& stream, LoginRequestPacket& loginPac
     return stream;
 }
 
-
 struct LoginSuccessPacket {
     QUuid userId;
     QString username;
     QList<RoomInfo> roomInfos; // chat rooms
-    QMap<QUuid, QString> contacts; // users without chat rooms
+    QMap<QUuid, UserInfo> contacts; // users without chat rooms
     QString welcomeMsg;
 };
 

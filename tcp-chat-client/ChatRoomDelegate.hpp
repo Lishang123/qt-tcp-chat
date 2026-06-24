@@ -9,11 +9,7 @@ enum Roles {
     RoomIdRole = Qt::UserRole + 2,
     StatusRole = Qt::UserRole + 3,
     UnreadRole = Qt::UserRole + 4,
-};
-
-enum ItemType {
-    Category,
-    Room,
+    OfflineRole = Qt::UserRole + 5,
 };
 
 
@@ -24,7 +20,9 @@ public:
     using QStyledItemDelegate::QStyledItemDelegate;
 
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-
+private:
+    void paintUnreadBadge(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    void paintGreyScale(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
 

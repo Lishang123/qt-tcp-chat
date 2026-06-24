@@ -1,21 +1,34 @@
-//
-// Created by Houcai Li on 24.06.26.
-//
-
 #include "ChatRoomDelegate.hpp"
 
 #include <QApplication>
 
-void ChatRoomDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-    // Draw the item normally
-    QStyledItemDelegate::paint(painter, option, index);
+void ChatRoomDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
+    const QModelIndex &index) const {
+
+    QStyleOptionViewItem opt(option);
+    initStyleOption(&opt, index);
+
+    if (index.data(OfflineRole).toBool())
+    {
+        opt.state &= ~QStyle::State_Enabled;
+    }
+    // Draw the item
+    QApplication::style()->drawControl(
+        QStyle::CE_ItemViewItem,
+        &opt,
+        painter);
 
     // Check unread status
     bool unread = index.data(UnreadRole).toBool();
     if (!unread)
         return;
+    paintUnreadBadge(painter, option, index);
+}
 
-    qInfo() << Q_FUNC_INFO << ", printing unread item";
+void ChatRoomDelegate::paintUnreadBadge(QPainter *painter, const QStyleOptionViewItem &option,
+    const QModelIndex &index) const {
+
+    qInfo() << Q_FUNC_INFO;
 
     // make a copy of the style option to modify
     QStyleOptionViewItem opt(option);
@@ -41,3 +54,32 @@ void ChatRoomDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     painter->drawEllipse(center, radius, radius);
     painter->restore();
 }
+
+
+
+void ChatRoomDelegate::paintGreyScale(QPainter *painter, const QStyleOptionViewItem &option,
+    const QModelIndex &index) const {
+
+    // Check disabled status
+    qInfo() << Q_FUNC_INFO;
+
+    QStyleOptionViewItem opt(option);
+    initStyleOption(&opt, index);
+
+    // Obtain the normal icon
+    QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
+
+    // Obtain the pixmap at the appropriate size
+    QPixmap pixmap = icon.pixmap(opt.decorationSize);
+
+    // Convert to grayscale
+    QImage grayImage = pixmap.toImage().convertToFormat(QImage::Format_Grayscale8);
+
+    // Replace the icon in the style option
+    opt.icon = QIcon(QPixmap::fromImage(grayImage));
+
+    // Draw the item
+    // FIXME: it doesn't work since paint calls initStyleOption again
+    QStyledItemDelegate::paint(painter, opt, index);
+}
+

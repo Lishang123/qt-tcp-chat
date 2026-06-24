@@ -23,6 +23,7 @@ void Server::handleClientDisconnected() {
     auto *client = qobject_cast<Client *>(sender());
     removeClient(client);
 
+    // Notify other users that someone has logged out.
     if (m_clients.count() > 0) {
         QByteArray data;
         QDataStream stream(&data, QIODevice::WriteOnly);
@@ -38,7 +39,7 @@ void Server::handleClientDisconnected() {
     emit clientDisconnected(client->getClientId());
 }
 
-void Server::handleLoginSuccess(QUuid userId, const QString& username, const QMap<QUuid, QString>& users, QList<RoomInfo>& roomInfos) {
+void Server::handleLoginSuccess(QUuid userId, const QString& username, const QMap<QUuid, UserInfo>& users, QList<RoomInfo>& roomInfos) {
     qInfo() << Q_FUNC_INFO;
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
@@ -70,7 +71,6 @@ void Server::handleLoginFailed(QUuid userId, const QString& errorMsg) {
 }
 
 
-
 void Server::removeClient(Client *client) {
     if (!client) return;
 
@@ -81,13 +81,28 @@ void Server::removeClient(Client *client) {
     emit clientChanged();
 }
 
+void Server::changeClientId(QUuid clientId , QUuid newClientId) {
+    qInfo() << Q_FUNC_INFO << "reusing the clientId " << newClientId << ", remove the generated clientId" << clientId;
+    auto it = m_clients.find(clientId);
+    if (it != m_clients.end()) {
+        auto client = it.value();
+        client->setClientId(newClientId);
+        m_clients.erase(it);
+        m_clients.insert(newClientId, client);
+    }
+    else {
+        qCritical() << Q_FUNC_INFO << " client not found";
+    }
+}
+
 void Server::sendMessageToRoom( ChatRoom& chatRoom, const ChatMessagePacket &packet) {
+    qInfo() << Q_FUNC_INFO;
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     stream << PacketType::ChatMessage;
     stream << packet;
     for (auto user: chatRoom.getRoomUsers()) {
-      sendData(m_clients[user->user_id], data);
+        if (user->isOnline()) sendData(m_clients[user->user_id], data);
     }
 }
 
@@ -114,7 +129,7 @@ void Server::broadcast(const ChatMessagePacket& packet) {
     */
 
 void Server::incomingConnection(qintptr handle) {
-    // create the client in another thread
+    // create the client
     auto client = new Client(nullptr, handle);
     client->start();
 

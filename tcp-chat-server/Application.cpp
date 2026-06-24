@@ -8,8 +8,10 @@ void Application::init() {
 
     //log in
     connect(&m_roomManager, &RoomManager::loginSuccess, &m_server, &Server::handleLoginSuccess);
+    connect(&m_roomManager, &RoomManager::changeClientId, &m_server, &Server::changeClientId);
+
     connect(&m_roomManager, &RoomManager::loginFailed, &m_server, &Server::handleLoginFailed);
-    connect(&m_server, &Server::clientDisconnected, &m_roomManager, &RoomManager::removeUser);
+    connect(&m_server, &Server::clientDisconnected, &m_roomManager, &RoomManager::logoutUser);
 
     // receive packet
     connect(&m_server, &Server::messageReceived, &m_roomManager, &RoomManager::handleMessage);

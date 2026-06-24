@@ -10,6 +10,16 @@
 class Application : public QObject{
     Q_OBJECT
 
+    enum ItemType {
+        Category,
+        Room,
+    };
+
+    enum CategoryType {
+        Online = 1,
+        Offline = 2,
+    };
+
 public:
 
     explicit Application(QObject *parent = nullptr);
@@ -25,10 +35,13 @@ public:
 
     void updateRooms(const LoginSuccessPacket & loginSuccessPacket);
 
-    void addUser(const QUuid &roomId, const QUuid &userId, const QString &userName);
+    void addUser(const QUuid &roomId, const QUuid &userId, const UserInfo& userInfo);
+    void enableUser(const LoginNotificationPacket &logoutNotificationPacket);
+
     void addChatGroup(const QUuid &roomId, const QString &groupName);
 
     void removeUser(const LogoutNotificationPacket &logoutNotificationPacket);
+    void disableUser(const LogoutNotificationPacket &logoutNotificationPacket);
 
     void processMessage(const ChatMessagePacket& chatMessagePacket);
 
@@ -75,6 +88,7 @@ public:
 signals:
     // void roomSwitched(const QModelIndex &index, ChatRoom &chatRoom);
     void roomStatusChanged();
+    void itemMoved(QStandardItem* userItem);
 
 public slots:
     void disconnectFromServer();
@@ -82,6 +96,9 @@ public slots:
 private:
     bool setUnreadBadge(const QUuid &roomId, bool unread);
     void setUnreadBadge(QStandardItem* item, bool unread);
+    void setUserOnlineStatus(const QUuid& userId, bool online);
+    void moveUserToGroup(QStandardItem* userItem, CategoryType ctype);
+
     QStandardItem* getRoomItem(const QUuid &roomId);
     QStandardItem * getUserItem(const QUuid &userId);
 

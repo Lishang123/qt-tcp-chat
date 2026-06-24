@@ -19,15 +19,32 @@ struct User {
         return os.str();
     }
 
+    QString getUsername() const {
+        return username;
+    }
+
+    QUuid getUserId() {
+        return user_id;
+    }
+
+    bool isOnline() {
+        return onlineStatus;
+    }
+
+    void setOnlineStatus(bool status) {
+        onlineStatus = status;
+    }
+
+    bool onlineStatus = true;
     QUuid user_id;
     QString username;
 };
 
 struct Users : public QMap<QUuid,std::shared_ptr<User>>{
-    QMap<QUuid, QString> getUserInfos() {
-        QMap<QUuid, QString> userInfos;
+    QMap<QUuid, UserInfo> getUserInfos() {
+        QMap<QUuid, UserInfo> userInfos;
         foreach(const auto& user, values()) {
-            userInfos.insert(user->user_id, user->username);
+            userInfos.insert(user->user_id, {user->getUsername(), user->isOnline()});
         }
         return userInfos;
     }

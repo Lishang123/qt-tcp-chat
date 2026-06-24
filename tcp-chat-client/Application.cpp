@@ -48,6 +48,7 @@ void Application::updateRooms(const LoginSuccessPacket & loginSuccessPacket) {
     //m_roomListModel.appendRow(m_roomListModel.invisibleRootItem());
 
     // add rooms:
+    QUuid userId = loginSuccessPacket.userId;
     auto roomInfos = loginSuccessPacket.roomInfos;
     // add the public room to the sidebar
     addChatGroup(m_publicRoomId, "public");
@@ -56,28 +57,49 @@ void Application::updateRooms(const LoginSuccessPacket & loginSuccessPacket) {
     foreach(auto roomInfo, roomInfos) {
         if(roomInfo.roomId == m_publicRoomId || roomInfo.roomId == m_currentRoomId) continue;
         if (roomInfo.roomType == RoomType::Self) {
-            addUser(roomInfo.roomId, roomInfo.roomId, roomInfo.roomName);
+            assert(roomInfo.userInfos.count() == 1);
+            assert(roomInfo.roomId == userId);
+            addUser(roomInfo.roomId, roomInfo.roomId, roomInfo.userInfos.first());
         }
         if (roomInfo.roomType == RoomType::DirectChat) {
-            addUser(roomInfo.roomId, QUuid() , roomInfo.roomName);
+            assert(roomInfo.userInfos.count() == 1);
+            //get the userId
+            addUser(roomInfo.roomId, roomInfo.userInfos.firstKey() , roomInfo.userInfos.first());
         }
     }
 
     // add users without rooms
-    for (const auto& [userId, userName]: loginSuccessPacket.contacts.asKeyValueRange()) {
+    for (const auto& [userId, userInfo]: loginSuccessPacket.contacts.asKeyValueRange()) {
         // qInfo() << chatRoom->getRoomId() << chatRoom->getRoomName();
         // qInfo() << Q_FUNC_INFO << chatRoom->getRoomInfo().roomId;
-        addUser(QUuid(), userId, userName);
+        addUser(QUuid(), userId, userInfo);
     }
 }
 
-void Application::addUser(const QUuid &roomId, const QUuid &userId, const QString &userName) {
+void Application::addUser(const QUuid &roomId, const QUuid &userId, const UserInfo& userInfo) {
     // TODO: replace it with subclass of QAbstractItem
-    QStandardItem* item = new QStandardItem(userName);
+    QStandardItem* item = new QStandardItem(userInfo.username);
     item->setData(roomId, RoomIdRole);
     item->setData(userId, UserIdRole);
+    item->setData(!userInfo.isOnline, OfflineRole);
     item->setIcon(QIcon(":/icons/icons/mann-avatar.png"));
-    m_roomListModel.item(1)->appendRow(item);
+    if (userInfo.isOnline) {
+        m_roomListModel.item(1)->appendRow(item);
+    }
+    else {
+        m_roomListModel.item(2)->appendRow(item);
+    }
+}
+
+void Application::enableUser(const LoginNotificationPacket &loginNotificationPacket) {
+    auto userItem = getUserItem(loginNotificationPacket.userId);
+    if (userItem) {
+        qInfo() << Q_FUNC_INFO << "enable user " << userItem->text();
+        setUserOnlineStatus(loginNotificationPacket.userId, true);
+        return;
+    }
+    qInfo() << Q_FUNC_INFO << "add new user item " << loginNotificationPacket.username;
+    addUser(QUuid(), loginNotificationPacket.userId, {loginNotificationPacket.username, true});
 }
 
 void Application::addChatGroup(const QUuid &roomId, const QString &groupName) {
@@ -90,19 +112,15 @@ void Application::addChatGroup(const QUuid &roomId, const QString &groupName) {
 
 
 void Application::removeUser(const LogoutNotificationPacket &logoutNotificationPacket) {
-    auto userCategoryItem = m_roomListModel.item(1);
     auto userItem = getUserItem(logoutNotificationPacket.userId);
     if (userItem) {
         qInfo() << Q_FUNC_INFO << "remove user item " << userItem->text();
         userItem->parent()->removeRow(userItem->row());
     }
-    // for (int row = 0; row < userCategoryItem->rowCount(); ++row) {
-    //     auto item = userCategoryItem->child(row);
-    //     if (item->data(UserIdRole) == logoutNotificationPacket.userId) {
-    //         userCategoryItem->removeRow(row);
-    //         break;
-    //     }
-    // }
+}
+
+void Application::disableUser(const LogoutNotificationPacket &logoutNotificationPacket) {
+    setUserOnlineStatus(logoutNotificationPacket.userId, false);
 }
 
 bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool switchRoomLater) {
@@ -201,6 +219,32 @@ void Application::setUnreadBadge(QStandardItem *item, bool unread) {
     emit roomStatusChanged();
 }
 
+void Application::setUserOnlineStatus(const QUuid &userId, bool online) {
+    auto userItem = getUserItem(userId);
+    if (userItem) {
+        if (online) {
+            qInfo() << Q_FUNC_INFO << "enable user item " << userItem->text();
+            userItem->setData(false, OfflineRole);
+            moveUserToGroup(userItem, CategoryType::Online);
+        }
+        else {
+            qInfo() << Q_FUNC_INFO << "disable user item " << userItem->text();
+            userItem->setData(true, OfflineRole);
+            moveUserToGroup(userItem, CategoryType::Offline);
+        }
+    }
+}
+
+void Application::moveUserToGroup(QStandardItem *userItem, CategoryType ctype) {
+    QStandardItem* movedItem = userItem;
+    QStandardItem *oldParent = userItem->parent();
+    QStandardItem *newParent = m_roomListModel.item(ctype);
+    QList<QStandardItem *> row = oldParent->takeRow(userItem->row());
+    newParent->appendRow(row);
+    emit itemMoved(movedItem);
+    //QModelIndex newIndex = userItem->index();
+}
+
 QStandardItem * Application::getRoomItem(const QUuid &roomId) {
     qInfo() << Q_FUNC_INFO;
     if (roomId.isNull()) {
@@ -212,7 +256,7 @@ QStandardItem * Application::getRoomItem(const QUuid &roomId) {
 
         for (int itemRow = 0; itemRow < userCategoryItem->rowCount(); ++itemRow) {
             auto item = userCategoryItem->child(itemRow);
-            if (item->data(RoomIdRole) == roomId) {
+            if (item->data(RoomIdRole).toUuid() == roomId) {
                 return item;
             }
         }
@@ -222,7 +266,6 @@ QStandardItem * Application::getRoomItem(const QUuid &roomId) {
 }
 
 QStandardItem * Application::getUserItem(const QUuid &userId) {
-    qInfo() << Q_FUNC_INFO;
     if (userId.isNull()) {
         qCritical() << Q_FUNC_INFO << "given userId is null";
         return nullptr;
@@ -232,12 +275,13 @@ QStandardItem * Application::getUserItem(const QUuid &userId) {
 
         for (int itemRow = 0; itemRow < userCategoryItem->rowCount(); ++itemRow) {
             auto item = userCategoryItem->child(itemRow);
-            if (item->data(UserIdRole) == userId) {
+            qInfo() << Q_FUNC_INFO << "userId" << item->data(UserIdRole).toUuid();
+            if (item->data(UserIdRole).toUuid() == userId) {
                 return item;
             }
         }
     }
-    qCritical() << Q_FUNC_INFO << "roomId is not found!";
+    qCritical() << Q_FUNC_INFO << "userId" << userId << " is not found!";
     return nullptr;
 }
 

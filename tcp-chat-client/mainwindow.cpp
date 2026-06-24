@@ -7,6 +7,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     , m_application(application)
 {
     ui->setupUi(this);
+    ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->roomView->setIconSize(QSize(26, 26));
     auto font = ui->roomView->font();
@@ -21,11 +22,13 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     connect(ui->textMsg, &QLineEdit::returnPressed, this, &MainWindow::on_btnSend_clicked);
 
     connect(m_application, &Application::roomStatusChanged, this, &MainWindow::onRoomStatusChanged);
+    connect(m_application, &Application::itemMoved, this, &MainWindow::onItemMoved);
 
-    //connect(&m_application->getClient(), &Client::connecloggedInted, this, &MainWindow::onClientConnected);
     connect(&m_application->getClient(), &Client::disconnected, this, &MainWindow::onClientDisconnected);
-    connect(&m_application->getClient(), &Client::notifyUserLogin, this, &MainWindow::addUser);
-    connect(&m_application->getClient(), &Client::notifyUserLogout, this, &MainWindow::removeUser);
+
+    connect(&m_application->getClient(), &Client::notifyUserLogin, this, &MainWindow::enableUser);
+    // connect(&m_application->getClient(), &Client::notifyUserLogout, this, &MainWindow::removeUser);
+    connect(&m_application->getClient(), &Client::notifyUserLogout, this, &MainWindow::disableUser);
 
     connect(&m_application->getClient(), &Client::messageReceived, this, &MainWindow::onMessageReceived);
     connect(&m_application->getClient(), &Client::errorOccured, this, &MainWindow::onError);
@@ -65,12 +68,17 @@ void MainWindow::on_btnSend_clicked()
     ui->textMsg->clear();
 }
 
-void MainWindow::addUser(const LoginNotificationPacket &loginNotificationPacket) {
-    m_application->addUser(QUuid(), loginNotificationPacket.userId, loginNotificationPacket.username);
-}
 
 void MainWindow::removeUser(const LogoutNotificationPacket &logoutNotificationPacket) {
     m_application->removeUser(logoutNotificationPacket);
+}
+
+void MainWindow::enableUser(const LoginNotificationPacket &loginNotificationPacket) {
+    m_application->enableUser(loginNotificationPacket);
+}
+
+void MainWindow::disableUser(const LogoutNotificationPacket &logoutNotificationPacket) {
+    m_application->disableUser(logoutNotificationPacket);
 }
 
 void MainWindow::onError(const QString &errorMessage) {
@@ -148,9 +156,9 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
     RoomInfo roomInfo = roomInfoPacket.roomInfo;
     switch (roomInfo.roomType) {
         case RoomType::DirectChat: {
-            auto userIds = roomInfo.userIds;
-            assert(userIds.count() == 2);
-            if (!m_application->setRoomIdOnUser(roomInfo.roomId, userIds[1], true)) {
+            auto userInfos = roomInfo.userInfos;
+            assert(userInfos.count() == 1);
+            if (!m_application->setRoomIdOnUser(roomInfo.roomId, userInfos.firstKey(), true)) {
                 qCritical() << Q_FUNC_INFO << "Should not happend!";
                 return;
             }
@@ -182,5 +190,13 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
 void MainWindow::onRoomStatusChanged() {
     qInfo() << Q_FUNC_INFO;
     ui->roomView->viewport()->update();
+}
+
+void MainWindow::onItemMoved(QStandardItem *item) {
+    qInfo() << Q_FUNC_INFO;
+    auto sm = ui->roomView->selectionModel();
+    sm->clearSelection();
+    ui->roomView->setCurrentIndex(item->index());
+    onRoomStatusChanged();
 }
 

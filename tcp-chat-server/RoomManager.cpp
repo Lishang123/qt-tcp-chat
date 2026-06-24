@@ -9,7 +9,7 @@ RoomManager::RoomManager(QObject *parent) : QObject(parent) {
 
 
 void RoomManager::handleMessage(QUuid senderId, const QByteArray &data) {
-    qInfo() << Q_FUNC_INFO << data;
+    qInfo() << Q_FUNC_INFO;
     QDataStream ds(data);
     PacketType type;
     ds >> type;
@@ -50,35 +50,47 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
     //TODO: Authentication
     qInfo() << Q_FUNC_INFO;
 
-    // Check if user already logged in.
+    bool registered = false;
+    QUuid userId = clientId;
+    // Check if the user is registered.
     auto user = findUserByName(packet.username);
     if (user != nullptr) {
-        QString errorMsg = "User already logged in!";
-        emit loginFailed(clientId, errorMsg);
-        qInfo() << Q_FUNC_INFO << errorMsg;
-        return false;
+        // Check if user already logged in.
+        if ( user->isOnline()) {
+            QString errorMsg = "User already logged in!";
+            emit loginFailed(clientId, errorMsg);
+            qInfo() << Q_FUNC_INFO << errorMsg;
+            return false;
+        }
+        // User re-login
+        userId = user->getUserId();
+        user->setOnlineStatus(true);
+        registered = true;
+        // clientId will be discarded if user is already registered.
+        emit changeClientId(clientId, userId);
     }
 
-    //  Add user to list
-    user = addUser(clientId, packet.username);
-    if (!user) {
-        qCritical() << "This should not happen.";
-        return false;
+    if (!registered) {
+        // User Registration
+        // Add user to user list
+        user = addUser(userId, packet.username);
+        if (!user) {
+            qCritical() << "Registering user failed: This should not happen.";
+            return false;
+        }
+
+        //  Create the private room for user
+        auto room = createRoom(RoomType::Self, userId, packet.username);
+        room->addUser(userId, user);
+
+        //  Add user to public group
+        m_rooms[m_publicRoomId]->addUser(userId, user);
     }
 
-
-    //  Create the private room for user
-    auto room = createRoom(RoomType::Self, clientId, packet.username);
-    room->addUser(clientId, user);
-
-    //  Add user to public group
-    m_rooms[m_publicRoomId]->addUser(clientId, user);
-
+    // Construct roomInfo
     QList<RoomInfo> roomInfos;
     auto userInfos = m_users.getUserInfos();
-    // Construct roomInfo here
     for (const auto& [_, chatRoom]: m_rooms) {
-        // qInfo() << chatRoom->getRoomId() << chatRoom->getRoomName();
         // qInfo() << Q_FUNC_INFO << chatRoom->getRoomInfo().roomId;
         RoomType roomType = chatRoom->getRoomType();
         switch (roomType) {
@@ -88,38 +100,42 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
             }
             case RoomType::Self: {
                 // add monologue to the room info
-                if (chatRoom->getRoomUsers().contains(clientId)) {
+                if (chatRoom->getRoomUsers().contains(userId)) {
                     roomInfos.append(chatRoom->getRoomInfo());
-                    //remove self from userInfos
+                    // Remove self from userInfos so it's not printed twice on the client side
                     userInfos.remove(chatRoom->getRoomId());
                 }
                 break;
             }
             case RoomType::Chatgroup: {
-                if (chatRoom->getRoomUsers().contains(clientId)) {
+                if (chatRoom->getRoomUsers().contains(userId)) {
                     roomInfos.append(chatRoom->getRoomInfo());
                 }
                 break;
             }
             case RoomType::DirectChat: {
-                if (chatRoom->getRoomUsers().contains(clientId)) {
-                    roomInfos.append(chatRoom->getRoomInfo());
-                    // Remove the other participant from user list.
+                if (chatRoom->getRoomUsers().contains(userId)) {
                     auto users = chatRoom->getRoomUsers();
                     auto it = std::ranges::find_if(
                         users,
                         [&](const auto &participant)
                         {
-                            return participant->user_id != clientId;
+                            return participant->user_id != userId;
                         });
                     if (it != users.end()) {
                         auto otherUser = *it;
+                        //update the name of roomInfo to the other user
+                        auto roomInfo = chatRoom->getRoomInfo();
+                        // Remove the user who is getting it, leaving only the id of the other participant.
+                        roomInfo.userInfos.remove(userId);
+                        roomInfo.roomName = otherUser->username;
+                        roomInfos.append(roomInfo);
+                        // Remove the other participant from user list
                         userInfos.remove(otherUser->user_id);
                     }
                     else {
-                        qCritical() << Q_FUNC_INFO << ": The other participant is not found!";
+                        qCritical() << Q_FUNC_INFO << " This should not happen: The other participant is not found!";
                     }
-                    //userInfos.remove(chatRoom->getRoomUsers());
                 }
                 break;
             }
@@ -127,8 +143,8 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
                 qCritical() << Q_FUNC_INFO << "Unknown room type!";
         }
     }
-    qInfo() << Q_FUNC_INFO << "emiting loginSuccess";
-    emit loginSuccess(clientId, packet.username, userInfos, roomInfos);
+    qInfo() << Q_FUNC_INFO << "emitting loginSuccess";
+    emit loginSuccess(userId, packet.username, userInfos, roomInfos);
     return true;
 }
 
@@ -136,16 +152,31 @@ void RoomManager::removeUser(QUuid userId) {
     qInfo() << Q_FUNC_INFO;
 
     QList<QUuid> roomsToRemove;
+
+    // remove the user from all user groups
     for (const auto & [roomId, room]: m_rooms) {
         qInfo()  << room->getRoomName();
         room->removeUser(userId);
         if (room->getRoomName() != "public" && room->isEmpty())
             roomsToRemove.append(roomId);
     }
+    // remove all empty rooms
     foreach (auto roomId, roomsToRemove) {
         removeRoom(roomId);
     }
+    // remove the user
     m_users.remove(userId);
+}
+
+void RoomManager::logoutUser(QUuid userId) {
+    qInfo() << Q_FUNC_INFO;
+
+    if (!m_users.contains(userId)) {
+        qCritical() << Q_FUNC_INFO << " User " << userId << " not found!";
+        return;
+    }
+    m_users[userId]->setOnlineStatus(false);
+    qInfo() << Q_FUNC_INFO << userId << "Logged out";
 }
 
 
@@ -161,7 +192,9 @@ bool RoomManager::handleRoomRequest(QUuid senderId, RoomRequestPacket &packet) {
     std::ranges::for_each(packet.memberIds, [&](const auto &memberId) {
         room->addUser(memberId, m_users[memberId]);
     });
-    emit roomCreated(senderId, room->getRoomInfo());
+    auto roomInfo = room->getRoomInfo();
+    roomInfo.userInfos.remove(senderId); // remove the user requesting for convenience.
+    emit roomCreated(senderId, roomInfo);
     return true;
 }
 
