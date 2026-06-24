@@ -16,6 +16,11 @@ class Application : public QObject{
         StatusRole = Qt::UserRole
     };
 
+    enum ItemType {
+        Category,
+        Room,
+    };
+
 public:
 
     explicit Application(QObject *parent = nullptr);
@@ -32,6 +37,8 @@ public:
     void updateRooms(const LoginSuccessPacket & loginSuccessPacket);
 
     void addUser(const QUuid &roomId, const QUuid &userId, const QString &userName);
+    void addChatGroup(const QUuid &roomId, const QString &groupName);
+
     void removeUser(const LogoutNotificationPacket &logoutNotificationPacket);
 
     void processMessage(const ChatMessagePacket& chatMessagePacket);

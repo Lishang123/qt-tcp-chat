@@ -2,6 +2,16 @@
 
 
 Application::Application(QObject *parent) : QObject(parent), m_ChatModel(nullptr) {
+    auto groupCategory = new QStandardItem("groups");
+    groupCategory->setData(Category, Qt::UserRole);
+    auto onlineCategory = new QStandardItem("online");
+    onlineCategory->setData(Category, Qt::UserRole);
+    auto offlineCategory = new QStandardItem("offline");
+    offlineCategory->setData(Category, Qt::UserRole);
+
+    m_roomListModel.appendRow(groupCategory);
+    m_roomListModel.appendRow(onlineCategory);
+    m_roomListModel.appendRow(offlineCategory);
 }
 
 void Application::sendLoginRequest(const LoginRequestPacket &loginRequestPacket) {
@@ -37,7 +47,7 @@ void Application::updateRooms(const LoginSuccessPacket & loginSuccessPacket) {
     // add rooms:
     auto roomInfos = loginSuccessPacket.roomInfos;
     // add the public room to the sidebar
-    addUser(m_publicRoomId, QUuid(), "public");
+    addChatGroup(m_publicRoomId, "public");
 
     //add the rest of the rooms
     foreach(auto roomInfo, roomInfos) {
@@ -63,18 +73,41 @@ void Application::addUser(const QUuid &roomId, const QUuid &userId, const QStrin
     QStandardItem* item = new QStandardItem(userName);
     item->setData(roomId, RoomIdRole);
     item->setData(userId, UserIdRole);
-    m_roomListModel.appendRow(item);
+    m_roomListModel.item(1)->appendRow(item);
+}
+
+void Application::addChatGroup(const QUuid &roomId, const QString &groupName) {
+    QStandardItem* item = new QStandardItem(groupName);
+    item->setData(roomId, RoomIdRole);
+    item->setData(QUuid(), UserIdRole);
+    m_roomListModel.item(0)->appendRow(item);
 }
 
 
 void Application::removeUser(const LogoutNotificationPacket &logoutNotificationPacket) {
-    for (int row = 0; row < m_roomListModel.rowCount(); ++row) {
-        auto item = m_roomListModel.item(row);
+    auto userCategoryItem = m_roomListModel.item(1);
+    for (int row = 0; row < userCategoryItem->rowCount(); ++row) {
+        auto item = userCategoryItem->child(row);
         if (item->data(UserIdRole) == logoutNotificationPacket.userId) {
             m_roomListModel.removeRow(row);
             break;
         }
     }
+}
+
+bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool switchRoomLater) {
+    qInfo() << Q_FUNC_INFO;
+    auto userCategoryItem = m_roomListModel.item(1);
+    for (int row = 0; row < userCategoryItem->rowCount(); ++row) {
+        auto item = userCategoryItem->child(row);
+        if (item->data(UserIdRole) == userId) {
+            item->setData(roomId, RoomIdRole);
+            if (switchRoomLater)
+                return switchRoom(item->index()) != nullptr;
+            return true;
+        }
+    }
+    return false;
 }
 
 void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
@@ -97,6 +130,11 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
 }
 
 std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
+    // check entry category
+    if (index.data(Qt::UserRole) == Category) {
+        qInfo() << Q_FUNC_INFO << "category item clicked";
+        return nullptr;
+    }
     // check current chatroom
     QUuid targetRoomId = index.data(RoomIdRole).toUuid();
     if (targetRoomId.isNull()) { // request a new direct chat room
@@ -128,19 +166,7 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
 }
 
 
-bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool switchRoomLater) {
-    qInfo() << Q_FUNC_INFO;
-    for (int row = 0; row < m_roomListModel.rowCount(); ++row) {
-        auto item = m_roomListModel.item(row);
-        if (item->data(UserIdRole) == userId) {
-            item->setData(roomId, RoomIdRole);
-            if (switchRoomLater)
-                return switchRoom(item->index()) != nullptr;
-            return true;
-        }
-    }
-    return false;
-}
+
 
 
 void Application::disconnectFromServer() {
