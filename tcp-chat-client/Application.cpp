@@ -32,7 +32,10 @@ void Application::addChatMessage(const QUuid &targetRoomId, const QString &messa
     if (targetRoomId != m_currentRoomId) {
         //update the unread status and the chat model in that room
         m_rooms[targetRoomId]->incrementUnreadCount();
-        //TODO: update UI: icon...
+        setUnreadBadge(targetRoomId, true);
+    }
+    else if(m_rooms[targetRoomId]->getUnreadCount()) {
+        setUnreadBadge(targetRoomId, false);
     }
 }
 
@@ -88,13 +91,18 @@ void Application::addChatGroup(const QUuid &roomId, const QString &groupName) {
 
 void Application::removeUser(const LogoutNotificationPacket &logoutNotificationPacket) {
     auto userCategoryItem = m_roomListModel.item(1);
-    for (int row = 0; row < userCategoryItem->rowCount(); ++row) {
-        auto item = userCategoryItem->child(row);
-        if (item->data(UserIdRole) == logoutNotificationPacket.userId) {
-            userCategoryItem->removeRow(row);
-            break;
-        }
+    auto userItem = getUserItem(logoutNotificationPacket.userId);
+    if (userItem) {
+        qInfo() << Q_FUNC_INFO << "remove user item " << userItem->text();
+        userItem->parent()->removeRow(userItem->row());
     }
+    // for (int row = 0; row < userCategoryItem->rowCount(); ++row) {
+    //     auto item = userCategoryItem->child(row);
+    //     if (item->data(UserIdRole) == logoutNotificationPacket.userId) {
+    //         userCategoryItem->removeRow(row);
+    //         break;
+    //     }
+    // }
 }
 
 bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool switchRoomLater) {
@@ -106,6 +114,7 @@ bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool
             item->setData(roomId, RoomIdRole);
             if (switchRoomLater)
                 return switchRoom(item->index()) != nullptr;
+            setUnreadBadge(item, true);
             return true;
         }
     }
@@ -127,7 +136,6 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
         m_rooms.insert(targetRoomId,
                 std::make_shared<ChatRoom>(targetRoomId, roomName, 0));
     }
-    // if the message is sent to the current room, print the message here
     addChatMessage(targetRoomId, chatMessagePacket.getMessage());
 }
 
@@ -139,7 +147,8 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
     }
     // check current chatroom
     QUuid targetRoomId = index.data(RoomIdRole).toUuid();
-    if (targetRoomId.isNull()) { // request a new direct chat room
+
+    if (targetRoomId.isNull()) {
         qInfo() << Q_FUNC_INFO << ": requesting a new roomId";
         QUuid userId = index.data(UserIdRole).toUuid();
         if (userId.isNull()) {
@@ -159,7 +168,10 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
             m_rooms.insert(targetRoomId,
                 std::make_shared<ChatRoom>(targetRoomId, index.data(Qt::DisplayRole).toString(), 0));
         }
-        m_ChatModel = m_rooms[targetRoomId]->m_chat_model();
+
+        //the room is created, unset its unread badge
+        setUnreadBadge(targetRoomId, false);
+        m_ChatModel = m_rooms[targetRoomId]->getChatModel();
         return m_rooms[targetRoomId];
     }
 
@@ -168,12 +180,67 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
 }
 
 
-
-
-
 void Application::disconnectFromServer() {
     m_client.disconnectFromHost();
 }
+
+bool Application::setUnreadBadge(const QUuid &roomId, bool unread) {
+    qInfo() << Q_FUNC_INFO;
+    auto item = getRoomItem(roomId);
+    if (!item) {
+        qCritical() << Q_FUNC_INFO << "room not found!";
+        return false;
+    }
+    setUnreadBadge(item, unread);
+    return true;
+}
+
+void Application::setUnreadBadge(QStandardItem *item, bool unread) {
+    //item->setIcon(IconCreator::createBadgedIcon(item->icon(), m_iconSize));
+    item->setData(unread, UnreadRole);
+    emit roomStatusChanged();
+}
+
+QStandardItem * Application::getRoomItem(const QUuid &roomId) {
+    qInfo() << Q_FUNC_INFO;
+    if (roomId.isNull()) {
+        qCritical() << Q_FUNC_INFO << "given roomId is null";
+        return nullptr;
+    }
+    for (int categoryRow = 0; categoryRow < m_roomListModel.rowCount(); ++categoryRow) {
+        auto userCategoryItem = m_roomListModel.item(categoryRow);
+
+        for (int itemRow = 0; itemRow < userCategoryItem->rowCount(); ++itemRow) {
+            auto item = userCategoryItem->child(itemRow);
+            if (item->data(RoomIdRole) == roomId) {
+                return item;
+            }
+        }
+    }
+    qCritical() << Q_FUNC_INFO << "roomId is not found!";
+    return nullptr;
+}
+
+QStandardItem * Application::getUserItem(const QUuid &userId) {
+    qInfo() << Q_FUNC_INFO;
+    if (userId.isNull()) {
+        qCritical() << Q_FUNC_INFO << "given userId is null";
+        return nullptr;
+    }
+    for (int categoryRow = 1; categoryRow < m_roomListModel.rowCount(); ++categoryRow) {
+        auto userCategoryItem = m_roomListModel.item(categoryRow);
+
+        for (int itemRow = 0; itemRow < userCategoryItem->rowCount(); ++itemRow) {
+            auto item = userCategoryItem->child(itemRow);
+            if (item->data(UserIdRole) == userId) {
+                return item;
+            }
+        }
+    }
+    qCritical() << Q_FUNC_INFO << "roomId is not found!";
+    return nullptr;
+}
+
 //
 // void Application::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
 //
