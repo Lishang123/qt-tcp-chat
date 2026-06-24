@@ -8,6 +8,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
 {
     ui->setupUi(this);
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->roomView->setHeaderHidden(true);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->roomView->setIconSize(QSize(26, 26));
     auto font = ui->roomView->font();
