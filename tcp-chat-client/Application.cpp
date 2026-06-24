@@ -89,7 +89,7 @@ void Application::removeUser(const LogoutNotificationPacket &logoutNotificationP
     for (int row = 0; row < userCategoryItem->rowCount(); ++row) {
         auto item = userCategoryItem->child(row);
         if (item->data(UserIdRole) == logoutNotificationPacket.userId) {
-            m_roomListModel.removeRow(row);
+            userCategoryItem->removeRow(row);
             break;
         }
     }
