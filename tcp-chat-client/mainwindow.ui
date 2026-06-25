@@ -14,51 +14,62 @@
    <string>TCP Chat Client</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_3">
+   <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
-     <widget class="QTreeView" name="roomView">
-      <property name="maximumSize">
-       <size>
-        <width>200</width>
-        <height>16777215</height>
-       </size>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
-     </widget>
-    </item>
-    <item>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QLabel" name="lblChatbox">
-        <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QListView" name="chatbox">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <widget class="QTreeView" name="roomView">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>16777215</height>
+        </size>
+       </property>
+      </widget>
+      <widget class="QWidget" name="">
+       <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QLineEdit" name="textMsg"/>
-        </item>
-        <item>
-         <widget class="QPushButton" name="btnSend">
+         <widget class="QLabel" name="lblChatbox">
           <property name="text">
-           <string>Send</string>
+           <string>TextLabel</string>
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QListView" name="chatbox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QLineEdit" name="textMsg"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnSend">
+            <property name="text">
+             <string>Send</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
        </layout>
-      </item>
-     </layout>
+      </widget>
+     </widget>
     </item>
    </layout>
   </widget>
