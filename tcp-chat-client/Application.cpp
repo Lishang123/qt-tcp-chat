@@ -28,7 +28,7 @@ void Application::disconnectFromHost() {
 }
 
 void Application::addChatMessage(const QUuid &targetRoomId, const QString &message) {
-    m_rooms[targetRoomId]->getChatModel()->appendRow(new QStandardItem(message));
+    m_rooms[targetRoomId]->addMessage(message);
     if (targetRoomId != m_currentRoomId) {
         //update the unread status and the chat model in that room
         m_rooms[targetRoomId]->incrementUnreadCount();
@@ -155,10 +155,20 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
             setRoomIdOnUser(targetRoomId, chatMessagePacket.senderId, false);
         }
 
-        m_rooms.insert(targetRoomId,
-                std::make_shared<ChatRoom>(targetRoomId, roomName, 0));
+        createRoom(targetRoomId, roomName);
     }
     addChatMessage(targetRoomId, chatMessagePacket.getMessage());
+
+    // move room upward under user
+    if (targetRoomId == m_currentRoomId || targetRoomId == getUserId() || targetRoomId == m_publicRoomId) return;
+    auto roomItem = getRoomItem(targetRoomId);
+    if (!roomItem) {
+        qCritical()<< Q_FUNC_INFO << " room id not found: " << targetRoomId;
+        return;
+    }
+    auto parent = roomItem->parent();
+    //TODO: really need a QAbstractItemModel for moving rows (considering pinned rooms).
+    parent->insertRow(1, parent->takeRow(roomItem->row()));
 }
 
 std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
@@ -187,14 +197,15 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
         // switch the chat room, retrieve the chat history
         if (!m_rooms.contains(targetRoomId)) { // the chatroom hasn't been created yet
             // create a new room
-            m_rooms.insert(targetRoomId,
-                std::make_shared<ChatRoom>(targetRoomId, index.data(Qt::DisplayRole).toString(), 0));
+            createRoom(targetRoomId, index.data(Qt::DisplayRole).toString());
         }
 
         //the room is created, unset its unread badge
         setUnreadBadge(targetRoomId, false);
-        m_ChatModel = m_rooms[targetRoomId]->getChatModel();
-        return m_rooms[targetRoomId];
+        auto room = m_rooms[targetRoomId];
+        room->clearUnread();
+        m_ChatModel = room->getChatModel();
+        return room;
     }
 
     qInfo() << Q_FUNC_INFO << "you are already in the room you selected!";
@@ -204,6 +215,12 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
 
 void Application::disconnectFromServer() {
     m_client.disconnectFromHost();
+}
+
+void Application::createRoom(QUuid &roomId, const QString &roomName) {
+    auto room = std::make_shared<ChatRoom>(roomId, roomName, 0, m_chatHistoryManager);
+    room->loadHistory();
+    m_rooms.insert(roomId,room);
 }
 
 bool Application::setUnreadBadge(const QUuid &roomId, bool unread) {
@@ -247,9 +264,14 @@ void Application::moveUserToGroup(QStandardItem *userItem, CategoryType ctype) {
     QStandardItem *oldParent = userItem->parent();
     QStandardItem *newParent = m_roomListModel.item(ctype);
     QList<QStandardItem *> row = oldParent->takeRow(userItem->row());
-    newParent->appendRow(row);
+    if (ctype == CategoryType::Online) {
+        newParent->appendRow(row);
+    }
+    else if (ctype == CategoryType::Offline) {
+        // move the offline user to the first position
+        newParent->insertRow(0, row);
+    }
     // emit itemMoved(movedItem);
-    //QModelIndex newIndex = userItem->index();
 }
 
 QStandardItem * Application::getRoomItem(const QUuid &roomId) {

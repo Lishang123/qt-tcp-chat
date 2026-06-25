@@ -55,6 +55,10 @@ public:
         m_clientId = clientId;
     }
 
+    QUuid getClientId() {
+        return m_clientId;
+    }
+
 private:
     QUuid m_clientId;
     QString m_name;

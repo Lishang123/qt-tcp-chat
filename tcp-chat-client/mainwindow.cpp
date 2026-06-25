@@ -31,7 +31,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     connect(&m_application->getClient(), &Client::disconnected, this, &MainWindow::onClientDisconnected);
 
     connect(&m_application->getClient(), &Client::notifyUserLogin, this, &MainWindow::enableUser);
-    // connect(&m_application->getClient(), &Client::notifyUserLogout, this, &MainWindow::removeUser);
+
     connect(&m_application->getClient(), &Client::notifyUserLogout, this, &MainWindow::disableUser);
 
     connect(&m_application->getClient(), &Client::messageReceived, this, &MainWindow::onMessageReceived);
@@ -134,7 +134,6 @@ void MainWindow::onMessageReceived(const ChatMessagePacket &chatMessagePacket) {
     m_application->processMessage(chatMessagePacket);
     if (chatMessagePacket.roomId == m_application->getCurrentRoomId())
         ui->chatbox->scrollToBottom();
-    //TODO: move user to the top!
 }
 
 void MainWindow::printLoginMessage(const LoginSuccessPacket &loginSuccessPacket) {
