@@ -80,7 +80,6 @@ void MainWindow::enableUser(const LoginNotificationPacket &loginNotificationPack
     auto *sm = ui->roomView->selectionModel();
     if (sm->hasSelection()) {
         QModelIndex selectedIndex = sm->selectedIndexes().first();
-        auto item = m_application->getRoomListModel().itemFromIndex(selectedIndex);
         keepSelection = (selectedIndex.data(UserIdRole).toUuid() == loginNotificationPacket.userId);
         if (!keepSelection) {
             qInfo() << Q_FUNC_INFO << "keepSelection: false" << selectedIndex.data(UserIdRole).toUuid() << loginNotificationPacket.userId;
@@ -101,7 +100,6 @@ void MainWindow::disableUser(const LogoutNotificationPacket &logoutNotificationP
     auto *sm = ui->roomView->selectionModel();
     if (sm->hasSelection()) {
         QModelIndex selectedIndex = sm->selectedIndexes().first();
-        auto item = m_application->getRoomListModel().itemFromIndex(selectedIndex);
         keepSelection = (selectedIndex.data(UserIdRole).toUuid() == logoutNotificationPacket.userId);
         if (!keepSelection) {
             qInfo() << Q_FUNC_INFO << "keepSelection: " << keepSelection << selectedIndex.data(UserIdRole).toUuid() << logoutNotificationPacket.userId;
@@ -209,11 +207,11 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index)
     // chat box
     ui->chatbox->setModel(m_application->getChatModel());
 
+    // debug info
     auto *sm = ui->roomView->selectionModel();
     if (sm->hasSelection()) {
         QModelIndex index = sm->selectedIndexes().first();
-        QStandardItem *item = m_application->getRoomListModel().itemFromIndex(index);
-        qInfo() << Q_FUNC_INFO << item->data(UserIdRole).toString();
+        qDebug() << Q_FUNC_INFO << index.data(UserIdRole).toString();
     }
 }
 
