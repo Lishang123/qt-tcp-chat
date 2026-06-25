@@ -161,7 +161,7 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
     addChatMessage(targetRoomId, chatMessagePacket.getMessage());
 
     // move room upward under user
-    if (targetRoomId == getUserId()) return;
+    if (targetRoomId == m_currentRoomId || targetRoomId == getUserId() || targetRoomId == m_publicRoomId) return;
     auto roomItem = getRoomItem(targetRoomId);
     if (!roomItem) {
         qCritical()<< Q_FUNC_INFO << " room id not found: " << targetRoomId;
