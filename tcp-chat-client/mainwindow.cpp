@@ -8,6 +8,8 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
 {
     ui->setupUi(this);
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+
     ui->roomView->setHeaderHidden(true);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->roomView->setIconSize(QSize(26, 26));
@@ -15,6 +17,8 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     font.setPointSize(16);
     ui->roomView->setFont(font);
     ui->roomView->setItemDelegate(new ChatRoomDelegate(ui->roomView));
+    ui->roomView->setFocusPolicy(Qt::NoFocus);
+
 
     m_application->setIconSize(ui->roomView->iconSize());
     ui->lblChatbox->setText("");
