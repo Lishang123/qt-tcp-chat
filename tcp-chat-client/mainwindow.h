@@ -50,7 +50,7 @@ private slots:
 private:
 
     void disableAllBtns();
-    void updateChatRoomLabel();
+    void updateChatRoomLabel(const QModelIndex *userIndex);
     void setConnectedBtnStates();
     void setDisconnectedBtnStates();
     void printLoginMessage(const LoginSuccessPacket &loginSuccessPacket);

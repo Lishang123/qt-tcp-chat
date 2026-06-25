@@ -75,13 +75,44 @@ void MainWindow::removeUser(const LogoutNotificationPacket &logoutNotificationPa
 }
 
 void MainWindow::enableUser(const LoginNotificationPacket &loginNotificationPacket) {
-    m_application->enableUser(loginNotificationPacket);
-    updateChatRoomLabel();
+    qInfo() << Q_FUNC_INFO;
+    bool keepSelection = false;
+    auto *sm = ui->roomView->selectionModel();
+    if (sm->hasSelection()) {
+        QModelIndex selectedIndex = sm->selectedIndexes().first();
+        auto item = m_application->getRoomListModel().itemFromIndex(selectedIndex);
+        keepSelection = (selectedIndex.data(UserIdRole).toUuid() == loginNotificationPacket.userId);
+        if (!keepSelection) {
+            qInfo() << Q_FUNC_INFO << "keepSelection: false" << selectedIndex.data(UserIdRole).toUuid() << loginNotificationPacket.userId;
+        }
+    }
+    auto userItem = m_application->enableUser(loginNotificationPacket);
+    if (keepSelection && userItem) {
+        auto index = userItem->index();
+        updateChatRoomLabel(&index);
+        onItemMoved(userItem);
+    }
+    qInfo() << Q_FUNC_INFO << "finished";
 }
 
 void MainWindow::disableUser(const LogoutNotificationPacket &logoutNotificationPacket) {
-    m_application->disableUser(logoutNotificationPacket);
-    updateChatRoomLabel();
+    qInfo() << Q_FUNC_INFO;
+    bool keepSelection = false;
+    auto *sm = ui->roomView->selectionModel();
+    if (sm->hasSelection()) {
+        QModelIndex selectedIndex = sm->selectedIndexes().first();
+        auto item = m_application->getRoomListModel().itemFromIndex(selectedIndex);
+        keepSelection = (selectedIndex.data(UserIdRole).toUuid() == logoutNotificationPacket.userId);
+        if (!keepSelection) {
+            qInfo() << Q_FUNC_INFO << "keepSelection: " << keepSelection << selectedIndex.data(UserIdRole).toUuid() << logoutNotificationPacket.userId;
+        }
+    }
+    auto userItem = m_application->disableUser(logoutNotificationPacket);
+    if (keepSelection && userItem) {
+        auto index = userItem->index();
+        updateChatRoomLabel(&index);
+        onItemMoved(userItem);
+    }
 }
 
 void MainWindow::onError(const QString &errorMessage) {
@@ -114,20 +145,26 @@ void MainWindow::disableAllBtns()
     ui->btnSend->setEnabled(false);
 }
 
-void MainWindow::updateChatRoomLabel() {
-    QModelIndex index = ui->roomView->currentIndex();
-    if (index.isValid()) {
-        if (index.data(OfflineRole).toBool()) {
-            auto text = ui->lblChatbox->text();
-            if (!text.endsWith("[Offline]"))
-                ui->lblChatbox->setText(text + " [Offline]");
-            ui->btnSend->setEnabled(false);
-            ui->textMsg->setEnabled(false);
-            return;
-        }
-        ui->btnSend->setEnabled(true);
-        ui->textMsg->setEnabled(true);
+void MainWindow::updateChatRoomLabel(const QModelIndex *userIndex) {
+    qInfo() << Q_FUNC_INFO;
+    // REMEMBER: this way, returned index is always valid in a tree view (0,0, ...)!!!
+    // QModelIndex index = ui->roomView->currentIndex();
+    // if (index.isValid()) {
+    // Always use selection model instead!!
+    if (userIndex->data(OfflineRole).toBool()) {
+        qInfo() << Q_FUNC_INFO << ", change label and disable buttons";
+        auto text = ui->lblChatbox->text();
+        if (!text.endsWith("[Offline]"))
+            ui->lblChatbox->setText(text + " [Offline]");
+        ui->btnSend->setEnabled(false);
+        ui->textMsg->setEnabled(false);
+        return;
     }
+    auto room = m_application->getCurrentRoom();
+    if (!room) return;
+    ui->lblChatbox->setText(room->getRoomName());
+    ui->btnSend->setEnabled(true);
+    ui->textMsg->setEnabled(true);
 }
 
 
@@ -168,9 +205,16 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index)
     //update the GUI
     // room label, buttons/fields
     ui->lblChatbox->setText(chatRoom->getRoomName());
-    updateChatRoomLabel();
+    updateChatRoomLabel(&index);
     // chat box
     ui->chatbox->setModel(m_application->getChatModel());
+
+    auto *sm = ui->roomView->selectionModel();
+    if (sm->hasSelection()) {
+        QModelIndex index = sm->selectedIndexes().first();
+        QStandardItem *item = m_application->getRoomListModel().itemFromIndex(index);
+        qInfo() << Q_FUNC_INFO << item->data(UserIdRole).toString();
+    }
 }
 
 void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
@@ -212,11 +256,14 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
 void MainWindow::onRoomStatusChanged() {
     qInfo() << Q_FUNC_INFO;
     ui->roomView->viewport()->update();
+    qInfo() << Q_FUNC_INFO << "finished";
 }
 
 void MainWindow::onItemMoved(QStandardItem *item) {
     qInfo() << Q_FUNC_INFO;
     auto sm = ui->roomView->selectionModel();
+    // Nothing is selected: no need to change selection
+    if (!sm->hasSelection()) return;
     sm->clearSelection();
     ui->roomView->setCurrentIndex(item->index());
     onRoomStatusChanged();

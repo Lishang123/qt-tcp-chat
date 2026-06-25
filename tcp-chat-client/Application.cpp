@@ -76,8 +76,9 @@ void Application::updateRooms(const LoginSuccessPacket & loginSuccessPacket) {
     }
 }
 
-void Application::addUser(const QUuid &roomId, const QUuid &userId, const UserInfo& userInfo) {
+QStandardItem *Application::addUser(const QUuid &roomId, const QUuid &userId, const UserInfo &userInfo) {
     // TODO: replace it with subclass of QAbstractItem
+    qInfo() << Q_FUNC_INFO << "add new user " << roomId << " " << userId << " " << userInfo.username;
     QStandardItem* item = new QStandardItem(userInfo.username);
     item->setData(roomId, RoomIdRole);
     item->setData(userId, UserIdRole);
@@ -89,17 +90,23 @@ void Application::addUser(const QUuid &roomId, const QUuid &userId, const UserIn
     else {
         m_roomListModel.item(2)->appendRow(item);
     }
+    return item;
 }
 
-void Application::enableUser(const LoginNotificationPacket &loginNotificationPacket) {
+QStandardItem *Application::enableUser(const LoginNotificationPacket &loginNotificationPacket) {
     auto userItem = getUserItem(loginNotificationPacket.userId);
     if (userItem) {
         qInfo() << Q_FUNC_INFO << "enable user " << userItem->text();
         setUserOnlineStatus(loginNotificationPacket.userId, true);
-        return;
+        return userItem;
     }
     qInfo() << Q_FUNC_INFO << "add new user item " << loginNotificationPacket.username;
-    addUser(QUuid(), loginNotificationPacket.userId, {loginNotificationPacket.username, true});
+    return addUser(QUuid(), loginNotificationPacket.userId, {loginNotificationPacket.username, true});
+}
+
+
+QStandardItem *Application::disableUser(const LogoutNotificationPacket &logoutNotificationPacket) {
+    return setUserOnlineStatus(logoutNotificationPacket.userId, false);
 }
 
 void Application::addChatGroup(const QUuid &roomId, const QString &groupName) {
@@ -119,9 +126,6 @@ void Application::removeUser(const LogoutNotificationPacket &logoutNotificationP
     }
 }
 
-void Application::disableUser(const LogoutNotificationPacket &logoutNotificationPacket) {
-    setUserOnlineStatus(logoutNotificationPacket.userId, false);
-}
 
 bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool switchRoomLater) {
     qInfo() << Q_FUNC_INFO;
@@ -219,7 +223,7 @@ void Application::setUnreadBadge(QStandardItem *item, bool unread) {
     emit roomStatusChanged();
 }
 
-void Application::setUserOnlineStatus(const QUuid &userId, bool online) {
+QStandardItem *Application::setUserOnlineStatus(const QUuid &userId, bool online) {
     auto userItem = getUserItem(userId);
     if (userItem) {
         if (online) {
@@ -232,7 +236,10 @@ void Application::setUserOnlineStatus(const QUuid &userId, bool online) {
             userItem->setData(true, OfflineRole);
             moveUserToGroup(userItem, CategoryType::Offline);
         }
+        return userItem;
     }
+    qCritical() << Q_FUNC_INFO << "user item not found!";
+    return nullptr;
 }
 
 void Application::moveUserToGroup(QStandardItem *userItem, CategoryType ctype) {
@@ -241,7 +248,7 @@ void Application::moveUserToGroup(QStandardItem *userItem, CategoryType ctype) {
     QStandardItem *newParent = m_roomListModel.item(ctype);
     QList<QStandardItem *> row = oldParent->takeRow(userItem->row());
     newParent->appendRow(row);
-    emit itemMoved(movedItem);
+    // emit itemMoved(movedItem);
     //QModelIndex newIndex = userItem->index();
 }
 
