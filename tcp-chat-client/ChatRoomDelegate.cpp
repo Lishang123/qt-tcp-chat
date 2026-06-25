@@ -20,6 +20,8 @@ void ChatRoomDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
         QStyle::CE_ItemViewItem,
         &opt,
         painter);
+    // The base function works as well.
+    //QStyledItemDelegate::paint(painter, opt, index);
 
     // Check unread status
     bool unread = index.data(UnreadRole).toBool();
