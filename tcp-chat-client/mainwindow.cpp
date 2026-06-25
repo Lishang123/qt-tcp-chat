@@ -31,7 +31,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     connect(&m_application->getClient(), &Client::disconnected, this, &MainWindow::onClientDisconnected);
 
     connect(&m_application->getClient(), &Client::notifyUserLogin, this, &MainWindow::enableUser);
-    // connect(&m_application->getClient(), &Client::notifyUserLogout, this, &MainWindow::removeUser);
+
     connect(&m_application->getClient(), &Client::notifyUserLogout, this, &MainWindow::disableUser);
 
     connect(&m_application->getClient(), &Client::messageReceived, this, &MainWindow::onMessageReceived);

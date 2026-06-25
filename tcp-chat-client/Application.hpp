@@ -90,8 +90,16 @@ public:
         m_client.setClientId(userId);
     }
 
+    QUuid getUserId() {
+        return m_client.getClientId();
+    }
+
     void setIconSize(QSize size) {
         m_iconSize = size;
+    }
+
+    void setHistoryManager(std::shared_ptr<ChatHistoryManager> historyManager) {
+        m_chatHistoryManager = historyManager;
     }
 
 signals:
@@ -118,8 +126,10 @@ private:
     QSize m_iconSize;
     QUuid m_publicRoomId;
     QUuid m_currentRoomId;
+
     QMap<QUuid, std::shared_ptr<ChatRoom>> m_rooms;
     QStandardItemModel m_roomListModel;
+    std::shared_ptr<ChatHistoryManager> m_chatHistoryManager;
 };
 
 #endif //QT_TCP_CHAT_APPLICATION_HPP

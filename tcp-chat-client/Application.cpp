@@ -28,7 +28,7 @@ void Application::disconnectFromHost() {
 }
 
 void Application::addChatMessage(const QUuid &targetRoomId, const QString &message) {
-    m_rooms[targetRoomId]->getChatModel()->appendRow(new QStandardItem(message));
+    m_rooms[targetRoomId]->addMessage(message);
     if (targetRoomId != m_currentRoomId) {
         //update the unread status and the chat model in that room
         m_rooms[targetRoomId]->incrementUnreadCount();
@@ -156,7 +156,7 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
         }
 
         m_rooms.insert(targetRoomId,
-                std::make_shared<ChatRoom>(targetRoomId, roomName, 0));
+                std::make_shared<ChatRoom>(targetRoomId, roomName, 0, m_chatHistoryManager));
     }
     addChatMessage(targetRoomId, chatMessagePacket.getMessage());
 
@@ -199,13 +199,15 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
         if (!m_rooms.contains(targetRoomId)) { // the chatroom hasn't been created yet
             // create a new room
             m_rooms.insert(targetRoomId,
-                std::make_shared<ChatRoom>(targetRoomId, index.data(Qt::DisplayRole).toString(), 0));
+                std::make_shared<ChatRoom>(targetRoomId, index.data(Qt::DisplayRole).toString(), 0, m_chatHistoryManager));
         }
 
         //the room is created, unset its unread badge
         setUnreadBadge(targetRoomId, false);
-        m_ChatModel = m_rooms[targetRoomId]->getChatModel();
-        return m_rooms[targetRoomId];
+        auto room = m_rooms[targetRoomId];
+        room->clearUnread();
+        m_ChatModel = room->getChatModel();
+        return room;
     }
 
     qInfo() << Q_FUNC_INFO << "you are already in the room you selected!";

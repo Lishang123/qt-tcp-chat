@@ -1,6 +1,7 @@
 #include "loginform.h"
 
 
+#include "ChatHistoryManager.hpp"
 #include "ui_loginform.h"
 
 LoginForm::LoginForm(Application* application, QWidget *parent)
@@ -27,6 +28,7 @@ void LoginForm::onClientConnected() {
 
 void LoginForm::onClientLoggedIn(const LoginSuccessPacket &loginSuccessPacket) {
     m_application->setUserId(loginSuccessPacket.userId);
+    m_application->setHistoryManager(std::make_shared<ChatHistoryManager>(loginSuccessPacket.userId));
     auto it = std::ranges::find_if(loginSuccessPacket.roomInfos, [](auto& roomInfo) {
         return roomInfo.roomName == "public";
     });
