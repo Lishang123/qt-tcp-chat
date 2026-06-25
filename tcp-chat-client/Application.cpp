@@ -155,8 +155,7 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
             setRoomIdOnUser(targetRoomId, chatMessagePacket.senderId, false);
         }
 
-        m_rooms.insert(targetRoomId,
-                std::make_shared<ChatRoom>(targetRoomId, roomName, 0, m_chatHistoryManager));
+        createRoom(targetRoomId, roomName);
     }
     addChatMessage(targetRoomId, chatMessagePacket.getMessage());
 
@@ -198,8 +197,7 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
         // switch the chat room, retrieve the chat history
         if (!m_rooms.contains(targetRoomId)) { // the chatroom hasn't been created yet
             // create a new room
-            m_rooms.insert(targetRoomId,
-                std::make_shared<ChatRoom>(targetRoomId, index.data(Qt::DisplayRole).toString(), 0, m_chatHistoryManager));
+            createRoom(targetRoomId, index.data(Qt::DisplayRole).toString());
         }
 
         //the room is created, unset its unread badge
@@ -217,6 +215,12 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
 
 void Application::disconnectFromServer() {
     m_client.disconnectFromHost();
+}
+
+void Application::createRoom(QUuid &roomId, const QString &roomName) {
+    auto room = std::make_shared<ChatRoom>(roomId, roomName, 0, m_chatHistoryManager);
+    room->loadHistory();
+    m_rooms.insert(roomId,room);
 }
 
 bool Application::setUnreadBadge(const QUuid &roomId, bool unread) {

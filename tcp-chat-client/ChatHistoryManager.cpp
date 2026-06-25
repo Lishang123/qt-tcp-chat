@@ -33,3 +33,18 @@ bool ChatHistoryManager::saveHistory(ChatRoom& chatRoom) {
 
     return true;
 }
+
+bool ChatHistoryManager::loadHistory(ChatRoom &chatRoom) {
+    QString filename = m_historyPath +  chatRoom.getRoomId().toString() + ".dat";
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qCritical() << Q_FUNC_INFO << file.errorString();
+        return false;
+    }
+    QDataStream stream(&file);
+    qInfo() << Q_FUNC_INFO <<  "Reading local chat history";
+    stream >> chatRoom;;
+    file.close();
+    qInfo() << Q_FUNC_INFO <<  "Chat history loaded";
+    return true;
+}

@@ -18,6 +18,10 @@ void ChatRoom::addMessage(const QString& message) {
 
 }
 
+bool ChatRoom::loadHistory() {
+    m_chatHistoryManager->loadHistory(*this);
+}
+
 void ChatRoom::saveHistory() {
     if (!m_historyModifed) return;
     m_chatHistoryManager->saveHistory(*this);

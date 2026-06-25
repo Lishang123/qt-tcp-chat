@@ -111,6 +111,9 @@ public slots:
     void disconnectFromServer();
 
 private:
+
+    void createRoom(QUuid& roomId, const QString& roomName);
+
     bool setUnreadBadge(const QUuid &roomId, bool unread);
     void setUnreadBadge(QStandardItem* item, bool unread);
 

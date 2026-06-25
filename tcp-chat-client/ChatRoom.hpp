@@ -60,6 +60,8 @@ public:
         m_chatHistoryManager = chatHistorySaver;
     }
 
+    bool loadHistory();
+
 private slots:
     void saveHistory();
 

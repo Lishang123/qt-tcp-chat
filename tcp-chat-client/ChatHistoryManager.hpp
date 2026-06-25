@@ -14,6 +14,7 @@ class ChatHistoryManager  {
 public:
     explicit ChatHistoryManager(QUuid userId);
     bool saveHistory(ChatRoom& chatRoom);
+    bool loadHistory(ChatRoom& chatRoom);
 
 private:
     QUuid m_userId;
