@@ -5,7 +5,7 @@
 #include <QDebug>
 #include <QRunnable>
 #include <QList>
-
+#include <QUuid>
 
 class Client : public QObject{
 
@@ -17,6 +17,15 @@ public:
 
     void start();
 
+    void setClientId(QUuid clientId) {
+        m_clientId = clientId;
+    }
+
+    QUuid getClientId() {
+        return m_clientId;
+    }
+
+
 signals:
     void disconnected();
     void dataReceived(const QByteArray & data);
@@ -24,7 +33,6 @@ signals:
 
 private slots:
 
-    //void disconnected();
     void readyRead();
     void sendMessage(const QByteArray& message);
 
@@ -34,6 +42,7 @@ public:
     }
 
 private:
+    QUuid m_clientId;
     QTcpSocket* m_socket;
     qintptr m_socketDescriptor;
 

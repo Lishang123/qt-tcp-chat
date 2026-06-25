@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QThread>
 
+#include "ChatRoom.hpp"
 #include "Client.h"
 
 class Server : public QTcpServer
@@ -22,19 +23,31 @@ public:
 
 signals:
     void clientChanged();
+    void clientConnected(QUuid clientId);
+    void clientDisconnected(QUuid clientId);
+    void messageReceived(QUuid clientId, const QByteArray & data);
 
-private slots:
-    void clientDisconnected();
-    void broadcast(const QByteArray& data);
+public slots:
+    void handleClientDisconnected();
+    void handleLoginSuccess(QUuid userId, const QString& username, const QMap<QUuid, UserInfo>& users, QList<RoomInfo>& roomInfos);
+    void handleLoginFailed(QUuid userId, const QString& errorMsg);
+    // void handleUserRemoved(QUuid clientId);
+    void sendMessageToRoom(ChatRoom& chatRoom, const ChatMessagePacket &packet);
+    void broadcast(const ChatMessagePacket& packet);
+    void onDataReceived(const QByteArray & data);
+    void sendRoomInfo(QUuid userId, const RoomInfo& roomInfo);
+    void changeClientId(QUuid clientId, QUuid newClientId);
 
 protected:
     void incomingConnection(qintptr handle) override;
 
 private:
-    void sendMessage(Client* client, const QByteArray& message);
+    void sendData(const QByteArray &data);
+    void sendData(Client* client, const QByteArray &data);
+    void removeClient(Client* client);
+
 
     QString m_welcome_msg;
-    QList<Client*> m_clients;
+    QMap<QUuid, Client*> m_clients;
 };
-
 #endif //SERVER_H

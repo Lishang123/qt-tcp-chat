@@ -1,8 +1,12 @@
+#include <iostream>
+
 #include "mainwindow.h"
 
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
+#include "Application.hpp"
+#include "loginform.h"
 
 int main(int argc, char *argv[])
 {
@@ -17,7 +21,16 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    MainWindow w;
-    w.show();
-    return QCoreApplication::exec();
+    Application application;
+
+    //Must add this line otherwise the socket is not closed!
+    QObject::connect(&a, &QCoreApplication::aboutToQuit, &application, &Application::disconnectFromServer);
+    {
+        LoginForm loginForm(&application);
+        if (loginForm.exec() != QDialog::Accepted)
+            return 0;
+    }
+    MainWindow window(&application);
+    window.show();
+    return a.exec();
 }

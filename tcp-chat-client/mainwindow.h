@@ -7,7 +7,10 @@
 #include <QStringList>
 #include <QStringListModel>
 #include <QInputDialog>
+#include <QShortcut>
 #include <QMessageBox>
+#include "../common/Packet.hpp"
+#include "Application.hpp"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -21,36 +24,41 @@ class MainWindow : public QMainWindow
 
 public:
 
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(Application *application, QWidget *parent = nullptr);
     ~MainWindow() override;
+
+public slots:
+
+    void onClientDisconnected();
+    void onMessageReceived(const ChatMessagePacket& chatMessagePacket);
+    void onError(const QString& errorMessage);
+
+    void removeUser(const LogoutNotificationPacket &logoutNotificationPacket);
+
+    void enableUser(const LoginNotificationPacket &loginNotificationPacket);
+    void disableUser(const LogoutNotificationPacket &logoutNotificationPacket);
+    //void addUnreadStatus(QStandardItem* item);
 
 private slots:
 
-    void on_btnConnect_clicked();
-
-    void on_btnDisconnect_clicked();
-
+    //void on_btnDisconnect_clicked();
     void on_btnSend_clicked();
-
-    void onConnected();
-
-    void onDisconnected();
-
-    void OnReadyRead();
-
-    void error(QAbstractSocket::SocketError error);
+    void on_roomView_clicked(const QModelIndex &index);
+    void onRoomAcquired(const RoomInfoPacket& roomInfoPacket);
+    void onRoomStatusChanged();
+    void onItemMoved(QStandardItem* item);
 
 private:
 
+    void addZoomInOut();
     void disableAllBtns();
+    void updateChatRoomLabel(const QModelIndex *userIndex);
     void setConnectedBtnStates();
     void setDisconnectedBtnStates();
+    void printLoginMessage(const LoginSuccessPacket &loginSuccessPacket);
+    void requestLoginInfo();
 
     Ui::MainWindow *ui;
-    QTcpSocket m_socket;
-    QStringList m_list;
-    QStringListModel m_model;
-    QString m_name;
-
+    Application* m_application;
 };
 #endif // MAINWINDOW_H

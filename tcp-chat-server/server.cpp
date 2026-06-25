@@ -3,15 +3,11 @@
 #include "Client.h"
 
 
-Server::Server(QObject *parent) : QTcpServer(parent)
-{
-
+Server::Server(QObject *parent) : QTcpServer(parent) {
 }
 
-void Server::closeServer()
-{
-    foreach (Client* client, m_clients)
-    {
+void Server::closeServer() {
+    foreach(Client* client, m_clients) {
         client->getSocket()->close();
     }
     qDeleteAll(m_clients);
@@ -23,30 +19,105 @@ void Server::closeServer()
 }
 
 
-void Server::clientDisconnected() {
-    auto* client = qobject_cast<Client*>(sender());
-    if(!client) return;
+void Server::handleClientDisconnected() {
+    auto *client = qobject_cast<Client *>(sender());
+    removeClient(client);
 
-    m_clients.removeAll(client);
-    disconnect(client, &Client::disconnected, this, &Server::clientDisconnected);
-    disconnect(client, &Client::dataReceived, this, &Server::broadcast);
+    // Notify other users that someone has logged out.
+    if (m_clients.count() > 0) {
+        QByteArray data;
+        QDataStream stream(&data, QIODevice::WriteOnly);
+        stream << PacketType::NotifyLogout;
+        stream << LogoutNotificationPacket{client->getClientId()};
+        foreach(QUuid clientId, m_clients.keys()) {
+            if (clientId == client->getClientId()) continue;
+            sendData(m_clients[clientId], data);
+        }
+    }
+
+    emit clientChanged();
+    emit clientDisconnected(client->getClientId());
+}
+
+void Server::handleLoginSuccess(QUuid userId, const QString& username, const QMap<QUuid, UserInfo>& users, QList<RoomInfo>& roomInfos) {
+    qInfo() << Q_FUNC_INFO;
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::LoginSuccess;
+    stream << LoginSuccessPacket{userId, username, roomInfos, users, m_welcome_msg};
+    sendData(m_clients[userId], data);
+    if (m_clients.count() > 1) {
+        QByteArray notifyData;
+        QDataStream notifyStream(&notifyData, QIODevice::WriteOnly);
+        notifyStream << PacketType::NotifyLogin;
+        notifyStream << LoginNotificationPacket{userId, username };
+        foreach(QUuid clientId, m_clients.keys()) {
+            if (clientId == userId) continue;
+            sendData(m_clients[clientId], notifyData);
+        }
+    }
+
+}
+
+void Server::handleLoginFailed(QUuid userId, const QString& errorMsg) {
+    auto *client = m_clients[userId];
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::LoginFail;
+    stream << LoginFailedPacket{ errorMsg};
+    sendData(m_clients[userId], data);
+
+    client->getSocket()->disconnectFromHost();
+}
+
+
+void Server::removeClient(Client *client) {
+    if (!client) return;
+
+    m_clients.remove(client->getClientId());
+    disconnect(client, &Client::disconnected, this, &Server::handleClientDisconnected);
+    disconnect(client, &Client::dataReceived, this, &Server::onDataReceived);
     client->deleteLater();
-
-    // update GUI
     emit clientChanged();
 }
 
-void Server::sendMessage(Client* client, const QByteArray& message) {
-    client->getSocket()->write(message);
+void Server::changeClientId(QUuid clientId , QUuid newClientId) {
+    qInfo() << Q_FUNC_INFO << "reusing the clientId " << newClientId << ", remove the generated clientId" << clientId;
+    auto it = m_clients.find(clientId);
+    if (it != m_clients.end()) {
+        auto client = it.value();
+        client->setClientId(newClientId);
+        m_clients.erase(it);
+        m_clients.insert(newClientId, client);
+    }
+    else {
+        qCritical() << Q_FUNC_INFO << " client not found";
+    }
 }
 
-void Server::broadcast(const QByteArray& data)
-{
-    //Print the message for each connected client
-    for (Client* a_client : m_clients)
-    {
-        sendMessage(a_client, data);
+void Server::sendMessageToRoom( ChatRoom& chatRoom, const ChatMessagePacket &packet) {
+    qInfo() << Q_FUNC_INFO;
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::ChatMessage;
+    stream << packet;
+    for (auto user: chatRoom.getRoomUsers()) {
+        if (user->isOnline()) sendData(m_clients[user->user_id], data);
     }
+}
+
+
+void Server::broadcast(const ChatMessagePacket& packet) {
+    //Print the message for each connected client
+    qInfo() << Q_FUNC_INFO;
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::ChatMessage;
+    stream << packet;
+    for (Client *a_client: m_clients.values()) {
+        a_client->getSocket()->write(data);
+    }
+    emit clientChanged();
 }
 
 /*
@@ -57,32 +128,57 @@ void Server::broadcast(const QByteArray& data)
      * on the server side in this pattern.
     */
 
-void Server::incomingConnection(qintptr handle)
-{
-    // create the client in another thread
+void Server::incomingConnection(qintptr handle) {
+    // create the client
     auto client = new Client(nullptr, handle);
-
     client->start();
 
     // add the client socket to the client list.
-    m_clients.append(client);
+    client->setClientId(QUuid::createUuid());
+    m_clients.insert(client->getClientId(), client);
 
-    connect(client, &Client::disconnected, this, &Server::clientDisconnected);
-    connect(client,&Client::dataReceived, this, &Server::broadcast);
+    connect(client, &Client::disconnected, this, &Server::handleClientDisconnected);
+    connect(client, &Client::dataReceived, this, &Server::onDataReceived);
 
     // update GUI
     emit clientChanged();
-
-    sendMessage(client,m_welcome_msg.toUtf8());
 }
 
-void Server::setWelcome_msg(const QString &newWelcome_msg)
-{
+
+void Server::onDataReceived(const QByteArray & data) {
+    auto client = qobject_cast<Client *>(sender());
+    if (!client) {
+        qInfo() << Q_FUNC_INFO << " sender is not a client " << data;
+        return;
+    };
+    emit messageReceived(client->getClientId(), data);
+}
+
+void Server::sendRoomInfo(const QUuid userId, const RoomInfo &roomInfo) {
+    RoomInfoPacket roomInfoPacket{roomInfo};
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::RoomAcquired;
+    stream << roomInfoPacket;
+    sendData(m_clients[userId], data);
+}
+
+void Server::setWelcome_msg(const QString &newWelcome_msg) {
     m_welcome_msg = newWelcome_msg;
 }
 
-size_t Server::getClientsCount()
-{
+size_t Server::getClientsCount() {
     return m_clients.count();
 }
 
+
+void Server::sendData(Client *client, const QByteArray &data) {
+    client->getSocket()->write(data);
+}
+
+
+void Server::sendData(const QByteArray &data) {
+    for (Client *a_client: m_clients.values()) {
+        a_client->getSocket()->write(data);
+    }
+}

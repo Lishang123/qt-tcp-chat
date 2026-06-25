@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.16)
-
 project(tcp-chat-client VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
@@ -17,6 +15,14 @@ set(TS_FILES tcp-chat-client_de_DE.ts)
 
 set(PROJECT_SOURCES
         main.cpp
+        Application.cpp
+        Application.hpp
+        Client.cpp
+        Client.hpp
+        ChatRoom.cpp
+        ChatRoom.hpp
+        ChatRoomDelegate.hpp
+        ChatRoomDelegate.cpp
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
@@ -27,6 +33,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(tcp-chat-client
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        loginform.h loginform.cpp loginform.ui
+        Resources.qrc
 
     )
 # Define target properties for Android with Qt 6 as:
@@ -51,7 +59,7 @@ else()
     qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 endif()
 
-target_link_libraries(tcp-chat-client PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
+target_link_libraries(tcp-chat-client PRIVATE common Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

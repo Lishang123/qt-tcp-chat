@@ -3,6 +3,8 @@
 
 #include <QDialog>
 #include <QMessageBox>
+
+#include "Application.hpp"
 #include "server.h"
 
 QT_BEGIN_NAMESPACE
@@ -18,6 +20,7 @@ class Dialog : public QDialog
 public:
     explicit Dialog(QWidget *parent = nullptr);
     ~Dialog() override;
+    //void connectToController(Application& application);
 
 private slots:
 
@@ -33,6 +36,7 @@ private:
     void enableBtnsStopped();
 
     Ui::Dialog *ui;
-    Server m_server;
+    Application m_application;
+    //Server m_server;
 };
 #endif // DIALOG_H

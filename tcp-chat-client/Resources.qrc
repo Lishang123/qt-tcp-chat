@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>icons/mann-avatar.png</file>
+        <file>icons/globe.png</file>
+    </qresource>
+    <qresource prefix="/history"/>
+</RCC>
