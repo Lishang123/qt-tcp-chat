@@ -3,9 +3,8 @@
 
 MainWindow::MainWindow(Application *application, QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-    , m_application(application)
-{
+      , ui(new Ui::MainWindow)
+      , m_application(application) {
     ui->setupUi(this);
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
@@ -53,8 +52,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     setWindowTitle("Chat Client " + username);
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     delete ui;
 }
 
@@ -67,8 +65,7 @@ MainWindow::~MainWindow()
 // }
 
 
-void MainWindow::on_btnSend_clicked()
-{
+void MainWindow::on_btnSend_clicked() {
     qInfo() << "send clicked";
     m_application->sendMessage(ui->textMsg->text());
     ui->textMsg->clear();
@@ -87,7 +84,8 @@ void MainWindow::enableUser(const LoginNotificationPacket &loginNotificationPack
         QModelIndex selectedIndex = sm->selectedIndexes().first();
         keepSelection = (selectedIndex.data(UserIdRole).toUuid() == loginNotificationPacket.userId);
         if (!keepSelection) {
-            qInfo() << Q_FUNC_INFO << "keepSelection: false" << selectedIndex.data(UserIdRole).toUuid() << loginNotificationPacket.userId;
+            qInfo() << Q_FUNC_INFO << "keepSelection: false" << selectedIndex.data(UserIdRole).toUuid() <<
+                    loginNotificationPacket.userId;
         }
     }
     auto userItem = m_application->enableUser(loginNotificationPacket);
@@ -107,7 +105,8 @@ void MainWindow::disableUser(const LogoutNotificationPacket &logoutNotificationP
         QModelIndex selectedIndex = sm->selectedIndexes().first();
         keepSelection = (selectedIndex.data(UserIdRole).toUuid() == logoutNotificationPacket.userId);
         if (!keepSelection) {
-            qInfo() << Q_FUNC_INFO << "keepSelection: " << keepSelection << selectedIndex.data(UserIdRole).toUuid() << logoutNotificationPacket.userId;
+            qInfo() << Q_FUNC_INFO << "keepSelection: " << keepSelection << selectedIndex.data(UserIdRole).toUuid() <<
+                    logoutNotificationPacket.userId;
         }
     }
     auto userItem = m_application->disableUser(logoutNotificationPacket);
@@ -130,7 +129,7 @@ void MainWindow::onClientDisconnected() {
     //setWindowTitle("Chat Client: Logged out");
 }
 
-void MainWindow::onMessageReceived(const ChatMessagePacket& chatMessagePacket) {
+void MainWindow::onMessageReceived(const ChatMessagePacket &chatMessagePacket) {
     //create room, update room message
     m_application->processMessage(chatMessagePacket);
     if (chatMessagePacket.roomId == m_application->getCurrentRoomId())
@@ -143,8 +142,7 @@ void MainWindow::printLoginMessage(const LoginSuccessPacket &loginSuccessPacket)
     ui->chatbox->scrollToBottom();
 }
 
-void MainWindow::disableAllBtns()
-{
+void MainWindow::disableAllBtns() {
     ui->btnSend->setEnabled(false);
 }
 
@@ -171,13 +169,11 @@ void MainWindow::updateChatRoomLabel(const QModelIndex *userIndex) {
 }
 
 
-void MainWindow::setConnectedBtnStates()
-{
+void MainWindow::setConnectedBtnStates() {
     ui->btnSend->setEnabled(true);
 }
 
-void MainWindow::setDisconnectedBtnStates()
-{
+void MainWindow::setDisconnectedBtnStates() {
     ui->btnSend->setEnabled(false);
 }
 
@@ -186,13 +182,13 @@ void MainWindow::requestLoginInfo() {
     while (true) {
         QString username = QInputDialog::getText(
             this, //parent widget
-        "Name", //title
-        "What is your name?",//label text inside of the dialog
-        QLineEdit::EchoMode::Normal, //show typed text normally
-        m_application->getClient().getUserName() // The pre-filled text inside the input field.
+            "Name", //title
+            "What is your name?", //label text inside of the dialog
+            QLineEdit::EchoMode::Normal, //show typed text normally
+            m_application->getClient().getUserName() // The pre-filled text inside the input field.
         );
         qInfo() << "username: " << username;
-        if (username.isEmpty()){
+        if (username.isEmpty()) {
             QMessageBox::critical(this, "Error", "Please enter a valid name!");
             continue;
         }
@@ -200,8 +196,7 @@ void MainWindow::requestLoginInfo() {
     }
 }
 
-void MainWindow::on_roomView_clicked(const QModelIndex &index)
-{
+void MainWindow::on_roomView_clicked(const QModelIndex &index) {
     qInfo() << Q_FUNC_INFO << ", index : " << index << "clicked";
     auto chatRoom = m_application->switchRoom(index);
     if (!chatRoom) return;
@@ -253,7 +248,6 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
     ui->btnSend->setEnabled(true);
     ui->textMsg->setEnabled(true);
     qCritical() << Q_FUNC_INFO << "finished.";
-
 }
 
 void MainWindow::onRoomStatusChanged() {
@@ -272,3 +266,19 @@ void MainWindow::onItemMoved(QStandardItem *item) {
     onRoomStatusChanged();
 }
 
+void MainWindow::addZoomInOut() {
+    auto chatBoxView = ui->chatbox;
+    auto zoomIn = new QShortcut(QKeySequence::ZoomIn, chatBoxView);
+    auto zoomOut = new QShortcut(QKeySequence::ZoomOut, chatBoxView);
+    connect(zoomIn, &QShortcut::activated, [chatBoxView] {
+        QFont font = chatBoxView->font();
+        font.setPointSize(font.pointSize() + 1);
+        chatBoxView->setFont(font);
+    });
+    connect(zoomOut, &QShortcut::activated, [chatBoxView] {
+        QFont f = chatBoxView->font();
+        if (f.pointSize() > 6)
+            f.setPointSize(f.pointSize() - 1);
+        chatBoxView->setFont(f);
+    });
+}
