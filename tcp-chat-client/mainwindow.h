@@ -7,6 +7,7 @@
 #include <QStringList>
 #include <QStringListModel>
 #include <QInputDialog>
+#include <QShortcut>
 #include <QMessageBox>
 #include "../common/Packet.hpp"
 #include "Application.hpp"
@@ -49,12 +50,12 @@ private slots:
 
 private:
 
+    void addZoomInOut();
     void disableAllBtns();
     void updateChatRoomLabel(const QModelIndex *userIndex);
     void setConnectedBtnStates();
     void setDisconnectedBtnStates();
     void printLoginMessage(const LoginSuccessPacket &loginSuccessPacket);
-
     void requestLoginInfo();
 
     Ui::MainWindow *ui;

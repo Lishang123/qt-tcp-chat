@@ -45,6 +45,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     ui->textMsg->setEnabled(false);
     //set room model
     //ui->chatbox->setModel(&m_application->getChatModel());
+    addZoomInOut();
     ui->roomView->setModel(&m_application->getRoomListModel());
     ui->roomView->expandAll();
 
