@@ -10,7 +10,10 @@ void ChatRoomDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     if (index.data(OfflineRole).toBool())
     {
+        //all bits set except the 'State_Enabled' bit.
         opt.state &= ~QStyle::State_Enabled;
+        // reverse: set this flag
+        // opt.state |= QStyle::State_Enabled;
     }
     // Draw the item
     QApplication::style()->drawControl(
