@@ -134,7 +134,6 @@ void MainWindow::onMessageReceived(const ChatMessagePacket &chatMessagePacket) {
     m_application->processMessage(chatMessagePacket);
     if (chatMessagePacket.roomId == m_application->getCurrentRoomId())
         ui->chatbox->scrollToBottom();
-    //TODO: move user to the top!
 }
 
 void MainWindow::printLoginMessage(const LoginSuccessPacket &loginSuccessPacket) {

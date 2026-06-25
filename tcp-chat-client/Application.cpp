@@ -159,6 +159,16 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
                 std::make_shared<ChatRoom>(targetRoomId, roomName, 0));
     }
     addChatMessage(targetRoomId, chatMessagePacket.getMessage());
+
+    // move room upward under user
+    auto roomItem = getRoomItem(targetRoomId);
+    if (!roomItem) {
+        qCritical()<< Q_FUNC_INFO << " room id not found: " << targetRoomId;
+        return;
+    }
+    auto parent = roomItem->parent();
+    //TODO: really need a QAbstractItemModel for moving rows (considering pinned rooms).
+    parent->insertRow(1, parent->takeRow(roomItem->row()));
 }
 
 std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
@@ -247,9 +257,14 @@ void Application::moveUserToGroup(QStandardItem *userItem, CategoryType ctype) {
     QStandardItem *oldParent = userItem->parent();
     QStandardItem *newParent = m_roomListModel.item(ctype);
     QList<QStandardItem *> row = oldParent->takeRow(userItem->row());
-    newParent->appendRow(row);
+    if (ctype == CategoryType::Online) {
+        newParent->appendRow(row);
+    }
+    else if (ctype == CategoryType::Offline) {
+        // move the offline user to the first position
+        newParent->insertRow(0, row);
+    }
     // emit itemMoved(movedItem);
-    //QModelIndex newIndex = userItem->index();
 }
 
 QStandardItem * Application::getRoomItem(const QUuid &roomId) {
