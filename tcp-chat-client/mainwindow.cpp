@@ -76,10 +76,12 @@ void MainWindow::removeUser(const LogoutNotificationPacket &logoutNotificationPa
 
 void MainWindow::enableUser(const LoginNotificationPacket &loginNotificationPacket) {
     m_application->enableUser(loginNotificationPacket);
+    updateChatRoomLabel();
 }
 
 void MainWindow::disableUser(const LogoutNotificationPacket &logoutNotificationPacket) {
     m_application->disableUser(logoutNotificationPacket);
+    updateChatRoomLabel();
 }
 
 void MainWindow::onError(const QString &errorMessage) {
@@ -99,6 +101,7 @@ void MainWindow::onMessageReceived(const ChatMessagePacket& chatMessagePacket) {
     m_application->processMessage(chatMessagePacket);
     if (chatMessagePacket.roomId == m_application->getCurrentRoomId())
         ui->chatbox->scrollToBottom();
+    //TODO: move user to the top!
 }
 
 void MainWindow::printLoginMessage(const LoginSuccessPacket &loginSuccessPacket) {
@@ -110,6 +113,22 @@ void MainWindow::disableAllBtns()
 {
     ui->btnSend->setEnabled(false);
 }
+
+void MainWindow::updateChatRoomLabel() {
+    QModelIndex index = ui->roomView->currentIndex();
+    if (index.isValid()) {
+        if (index.data(OfflineRole).toBool()) {
+            auto text = ui->lblChatbox->text();
+            ui->lblChatbox->setText(text + " [Offline] ");
+            ui->btnSend->setEnabled(false);
+            ui->textMsg->setEnabled(false);
+            return;
+        }
+        ui->btnSend->setEnabled(true);
+        ui->textMsg->setEnabled(true);
+    }
+}
+
 
 void MainWindow::setConnectedBtnStates()
 {
@@ -146,10 +165,11 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index)
     auto chatRoom = m_application->switchRoom(index);
     if (!chatRoom) return;
     //update the GUI
+    // room label, buttons/fields
     ui->lblChatbox->setText(chatRoom->getRoomName());
+    updateChatRoomLabel();
+    // chat box
     ui->chatbox->setModel(m_application->getChatModel());
-    ui->btnSend->setEnabled(true);
-    ui->textMsg->setEnabled(true);
 }
 
 void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
