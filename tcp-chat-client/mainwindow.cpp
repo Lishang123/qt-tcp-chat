@@ -119,7 +119,8 @@ void MainWindow::updateChatRoomLabel() {
     if (index.isValid()) {
         if (index.data(OfflineRole).toBool()) {
             auto text = ui->lblChatbox->text();
-            ui->lblChatbox->setText(text + " [Offline] ");
+            if (!text.endsWith("[Offline]"))
+                ui->lblChatbox->setText(text + " [Offline]");
             ui->btnSend->setEnabled(false);
             ui->textMsg->setEnabled(false);
             return;
