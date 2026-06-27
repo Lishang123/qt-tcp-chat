@@ -36,7 +36,7 @@ void LoginForm::onClientLoggedIn(const LoginSuccessPacket &loginSuccessPacket) {
         m_application->setPublicRoomId(it->roomId);
         //m_application->setCurrentRoomId(it->roomId); // Start from black!
     }
-    m_application->updateRooms(loginSuccessPacket);
+    m_application->initRooms(loginSuccessPacket);
     accept();
 }
 

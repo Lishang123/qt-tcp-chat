@@ -27,8 +27,8 @@ void Application::disconnectFromHost() {
     m_client.disconnectFromHost();
 }
 
-void Application::addChatMessage(const QUuid &targetRoomId, const QString &message) {
-    m_rooms[targetRoomId]->addMessage(message);
+void Application::addChatMessage(const QUuid &targetRoomId, const ChatMessagePacket chatMsg) {
+    m_rooms[targetRoomId]->addMessage(chatMsg);
     if (targetRoomId != m_currentRoomId) {
         //update the unread status and the chat model in that room
         m_rooms[targetRoomId]->incrementUnreadCount();
@@ -43,7 +43,7 @@ void Application::sendMessage(const QString &message) {
     m_client.sendMessage(message, m_currentRoomId);
 }
 
-void Application::updateRooms(const LoginSuccessPacket & loginSuccessPacket) {
+void Application::initRooms(const LoginSuccessPacket & loginSuccessPacket) {
     //This line keeps the program running forever!!
     //m_roomListModel.appendRow(m_roomListModel.invisibleRootItem());
 
@@ -52,6 +52,7 @@ void Application::updateRooms(const LoginSuccessPacket & loginSuccessPacket) {
     auto roomInfos = loginSuccessPacket.roomInfos;
     // add the public room to the sidebar
     addChatGroup(m_publicRoomId, "public");
+    createRoom(m_publicRoomId, "public", RoomType::Public);
 
     //add the rest of the rooms
     foreach(auto roomInfo, roomInfos) {
@@ -59,27 +60,30 @@ void Application::updateRooms(const LoginSuccessPacket & loginSuccessPacket) {
         if (roomInfo.roomType == RoomType::Self) {
             assert(roomInfo.userInfos.count() == 1);
             assert(roomInfo.roomId == userId);
-            addUser(roomInfo.roomId, roomInfo.roomId, roomInfo.userInfos.first());
+            addRoomItem(roomInfo.roomId, roomInfo.roomId, roomInfo.roomType, roomInfo.userInfos.first());
         }
         if (roomInfo.roomType == RoomType::DirectChat) {
             assert(roomInfo.userInfos.count() == 1);
             //get the userId
-            addUser(roomInfo.roomId, roomInfo.userInfos.firstKey() , roomInfo.userInfos.first());
+            addRoomItem(roomInfo.roomId, roomInfo.userInfos.firstKey() , roomInfo.roomType, roomInfo.userInfos.first());
         }
+        // create ChatRoom object and add it to the room list
+        createRoom(roomInfo.roomId, roomInfo.userInfos.first().username, roomInfo.roomType);
     }
 
     // add users without rooms
     for (const auto& [userId, userInfo]: loginSuccessPacket.contacts.asKeyValueRange()) {
         // qInfo() << chatRoom->getRoomId() << chatRoom->getRoomName();
         // qInfo() << Q_FUNC_INFO << chatRoom->getRoomInfo().roomId;
-        addUser(QUuid(), userId, userInfo);
+        addRoomItem(QUuid(), userId, RoomType::DirectChat, userInfo);
     }
 }
 
-QStandardItem *Application::addUser(const QUuid &roomId, const QUuid &userId, const UserInfo &userInfo) {
+QStandardItem *Application::addRoomItem(const QUuid &roomId, const QUuid &userId, const RoomType type, const UserInfo &userInfo) {
     // TODO: replace it with subclass of QAbstractItem
     qInfo() << Q_FUNC_INFO << "add new user " << roomId << " " << userId << " " << userInfo.username;
     QStandardItem* item = new QStandardItem(userInfo.username);
+    item->setData(static_cast<int>(type), RoomTypeRole);
     item->setData(roomId, RoomIdRole);
     item->setData(userId, UserIdRole);
     item->setData(!userInfo.isOnline, OfflineRole);
@@ -101,7 +105,7 @@ QStandardItem *Application::enableUser(const LoginNotificationPacket &loginNotif
         return userItem;
     }
     qInfo() << Q_FUNC_INFO << "add new user item " << loginNotificationPacket.username;
-    return addUser(QUuid(), loginNotificationPacket.userId, {loginNotificationPacket.username, true});
+    return addRoomItem(QUuid(), loginNotificationPacket.userId, RoomType::DirectChat, {loginNotificationPacket.username, true});
 }
 
 
@@ -151,13 +155,13 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
         qInfo() << Q_FUNC_INFO << "add new RoomId " << chatMessagePacket.roomId;
         QString roomName = (targetRoomId == m_publicRoomId ? "public" : chatMessagePacket.senderName);
 
-        if (roomName != "public") {
+        if (roomName != "public") { // this should not happen since public room should be added at login success
             setRoomIdOnUser(targetRoomId, chatMessagePacket.senderId, false);
         }
-
-        createRoom(targetRoomId, roomName);
+        //all received message without room should be from a friend: aka type direct chat
+        createRoom(targetRoomId, roomName, RoomType::DirectChat);
     }
-    addChatMessage(targetRoomId, chatMessagePacket.getMessage());
+    addChatMessage(targetRoomId, chatMessagePacket);
 
     // move room upward under user
     if (targetRoomId == m_currentRoomId || targetRoomId == getUserId() || targetRoomId == m_publicRoomId) return;
@@ -196,8 +200,9 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
         m_currentRoomId = targetRoomId;
         // switch the chat room, retrieve the chat history
         if (!m_rooms.contains(targetRoomId)) { // the chatroom hasn't been created yet
-            // create a new room
-            createRoom(targetRoomId, index.data(Qt::DisplayRole).toString());
+            createRoom(targetRoomId,
+                index.data(Qt::DisplayRole).toString(),
+                static_cast<RoomType>(index.data(RoomTypeRole).toInt()));
         }
 
         //the room is created, unset its unread badge
@@ -213,11 +218,31 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
 }
 
 
+bool Application::exportHistory(const QString &fileName, ExportFormat format) {
+    qInfo() << Q_FUNC_INFO;
+    switch (format) {
+        case ExportFormat::HTML: {
+            return m_rooms[m_currentRoomId]->exportHistoryHTML(fileName);
+        }
+        case ExportFormat::JSON: {
+            return m_rooms[m_currentRoomId]->exportHistoryJSON(fileName);
+        }
+        case ExportFormat::TXT: {
+            return m_rooms[m_currentRoomId]->exportHistoryTXT(fileName);
+        }
+        case ExportFormat::PDF: {
+            return m_rooms[m_currentRoomId]->exportHistoryPDF(fileName);
+        }
+        default:
+            return false;
+    }
+}
+
 void Application::disconnectFromServer() {
     m_client.disconnectFromHost();
 }
 
-void Application::createRoom(QUuid &roomId, const QString &roomName) {
+void Application::createRoom(const QUuid &roomId, const QString &roomName, RoomType roomType) {
     auto room = std::make_shared<ChatRoom>(roomId, roomName, 0, m_chatHistoryManager);
     room->loadHistory();
     m_rooms.insert(roomId,room);

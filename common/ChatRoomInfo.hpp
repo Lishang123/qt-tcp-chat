@@ -46,14 +46,5 @@ inline QDataStream& operator>>(QDataStream& stream, RoomInfo& roomInfo) {
     return stream;
 }
 
-struct MessageInfo {
-    uint32_t messageId;
-    QString text;
-};
-
-
-struct ChatHistoryInfo {
-
-};
 
 #endif //QT_TCP_CHAT_ROOMINFO_HPP

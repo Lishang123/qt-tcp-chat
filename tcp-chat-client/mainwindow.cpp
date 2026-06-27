@@ -281,3 +281,55 @@ void MainWindow::addZoomInOut() {
         chatBoxView->setFont(f);
     });
 }
+
+
+void MainWindow::on_btnExport_clicked()
+{
+    // Ask file name and format
+    qInfo() << Q_FUNC_INFO;
+    const QString format = "html"; // default format
+    QString initialPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation); // picture folder
+    if (initialPath.isEmpty())
+        initialPath = QDir::currentPath();
+    initialPath += tr("/untitled.") + format; //tr: auto translation
+
+    QFileDialog fileDialog(this, tr("Save As"), initialPath);
+    // This means the dialog is for saving, not opening.
+    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+    // This allows the user to type a new file name that does not exist yet.
+    fileDialog.setFileMode(QFileDialog::AnyFile);
+    fileDialog.setDirectory(initialPath);
+
+    // Get supported formats
+    QString filter =
+    tr("HTML (*.html *.htm);;"
+       "Text (*.txt);;"
+       "JSON (*.json);;"
+       "PDF (*.pdf)");
+    fileDialog.setNameFilter(filter);
+    fileDialog.selectMimeTypeFilter("text/" + format);
+    fileDialog.setDefaultSuffix(format);
+    if (fileDialog.exec() != QDialog::Accepted)
+        return;
+
+    // Get selected filename
+    // Even though this is a save dialog and usually only one file is selected, Qt still returns a list
+    // so get the first element.
+    QList selectedFiles = fileDialog.selectedFiles();
+    if (!selectedFiles.empty())
+    {
+        const QString fileName = selectedFiles.first();
+        auto nameFilter = fileDialog.selectedNameFilter();
+        Application::ExportFormat chosenFormat;
+        if (nameFilter.startsWith("HTML")) chosenFormat = Application::ExportFormat::HTML;
+        else if (nameFilter.startsWith("PDF")) chosenFormat = Application::ExportFormat::PDF;
+        else if (nameFilter.startsWith("JSON")) chosenFormat = Application::ExportFormat::JSON;
+        else if (nameFilter.startsWith("PDF")) chosenFormat = Application::ExportFormat::PDF;
+        else {
+            chosenFormat = Application::ExportFormat::UNKNOWN;
+            qCritical() << Q_FUNC_INFO << "unknown format!";
+        };
+        m_application->exportHistory(fileName, chosenFormat);
+    }
+}
+
