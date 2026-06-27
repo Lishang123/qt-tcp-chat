@@ -322,7 +322,7 @@ void MainWindow::on_btnExport_clicked()
         auto nameFilter = fileDialog.selectedNameFilter();
         Application::ExportFormat chosenFormat;
         if (nameFilter.startsWith("HTML")) chosenFormat = Application::ExportFormat::HTML;
-        else if (nameFilter.startsWith("PDF")) chosenFormat = Application::ExportFormat::PDF;
+        else if (nameFilter.startsWith("Text")) chosenFormat = Application::ExportFormat::TXT;
         else if (nameFilter.startsWith("JSON")) chosenFormat = Application::ExportFormat::JSON;
         else if (nameFilter.startsWith("PDF")) chosenFormat = Application::ExportFormat::PDF;
         else {
