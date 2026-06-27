@@ -18,7 +18,7 @@ void ChatRoom::addMessage(const QString& message) {
 }
 
 bool ChatRoom::loadHistory() {
-    m_chatHistoryManager->loadHistory(*this);
+    return m_chatHistoryManager->loadHistory(*this);
 }
 
 void ChatRoom::saveHistory() {
