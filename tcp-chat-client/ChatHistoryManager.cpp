@@ -81,10 +81,45 @@ bool ChatHistoryManager::exportHistoryJSON(ChatRoom &chatRoom, const QString &fi
 }
 
 bool ChatHistoryManager::exportHistoryTXT(ChatRoom &chatRoom, const QString &filepath) {
+    qInfo() << Q_FUNC_INFO;
+    QFile file(filepath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qCritical() << Q_FUNC_INFO << file.errorString();
+    }
+    QTextStream stream(&file);
+    stream.setEncoding(QStringConverter::Utf8);
+    stream << "room name: " << chatRoom.getRoomName() << "\n\n";
+    stream << "messages:" << "\n";
+
+    std::ranges::for_each(chatRoom.getChatMessages(), [&stream](const ChatMessagePacket &chatMessagePacket) {
+        stream << chatMessagePacket.getMessage() << "\n";
+    });
+
+    file.close();
+    qInfo() << Q_FUNC_INFO <<  "Chat history exported";
     return true;
 }
 
 bool ChatHistoryManager::exportHistoryHTML(ChatRoom &chatRoom, const QString &filepath) {
+    qInfo() << Q_FUNC_INFO;
+    QFile file(filepath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qCritical() << file.errorString();
+    }
+    QTextStream stream(&file);
+
+    stream << "<html>";
+    stream << "<body>\n";
+    for (const auto &chatMessage : chatRoom.getChatMessages()) {
+        stream << "<p>";
+        stream << "<b>" << chatMessage.senderName << "</b> ";
+        stream << "(" << chatMessage.timestamp.toString("yyyy-MM-dd HH:mm:ss") << ")<br>";
+        stream << chatMessage.text;
+        stream << "</p>\n";
+    }
+    stream << "</body>\n";
+    stream << "</html>";
+
     return true;
 }
 
