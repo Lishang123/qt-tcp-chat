@@ -8,6 +8,9 @@
 #include <QVariantMap>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QPrinter>
+#include <QTextDocument>
+
 #include "ChatRoom.hpp"
 
 class ChatRoom;
@@ -25,6 +28,8 @@ public:
     static bool exportHistoryPDF(ChatRoom& chatRoom, const QString &filepath);
 
 private:
+    static QString getHTML(ChatRoom& chatRoom);
+
     QUuid m_userId;
     QString m_historyPath;
 };
