@@ -4,6 +4,12 @@
 #include <QFile>
 #include <QStandardPaths>
 #include <QDir>
+#include <QJsonDocument>
+#include <QVariantMap>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QPrinter>
+#include <QTextDocument>
 
 #include "ChatRoom.hpp"
 
@@ -16,7 +22,14 @@ public:
     bool saveHistory(ChatRoom& chatRoom);
     bool loadHistory(ChatRoom& chatRoom);
 
+    static bool exportHistoryJSON(ChatRoom& chatRoom, const QString &filepath);
+    static bool exportHistoryTXT(ChatRoom& chatRoom, const QString &filepath);
+    static bool exportHistoryHTML(ChatRoom& chatRoom, const QString &filepath);
+    static bool exportHistoryPDF(ChatRoom& chatRoom, const QString &filepath);
+
 private:
+    static QString getHTML(ChatRoom& chatRoom);
+
     QUuid m_userId;
     QString m_historyPath;
 };

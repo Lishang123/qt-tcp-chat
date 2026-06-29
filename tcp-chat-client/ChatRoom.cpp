@@ -1,6 +1,7 @@
 #include "ChatRoom.hpp"
 
 #include "ChatHistoryManager.hpp"
+#include "../common/ChatMessagePacket.hpp"
 
 ChatRoom::ChatRoom(QObject *parent): QObject (parent) {
     init();
@@ -11,15 +12,31 @@ ChatRoom::ChatRoom(QUuid id, QString roomName, uint16_t unreadCount, std::shared
     init();
 }
 
-void ChatRoom::addMessage(const QString& message) {
-    m_chatModel.appendRow(new QStandardItem(message));
+void ChatRoom::addMessage(const ChatMessagePacket &chatMsg) {
+    m_messages.push_back(chatMsg);
+    m_chatModel.appendRow(new QStandardItem(chatMsg.getMessage()));
     m_historyModifed = true;
-    m_timer.start(5000);
-
+    m_timer.start(3000); // save history after 3 secs
 }
 
 bool ChatRoom::loadHistory() {
-    m_chatHistoryManager->loadHistory(*this);
+    return m_chatHistoryManager->loadHistory(*this);
+}
+
+bool ChatRoom::exportHistoryJSON(const QString &filepath) {
+    return m_chatHistoryManager->exportHistoryJSON(*this, filepath);
+}
+
+bool ChatRoom::exportHistoryTXT(const QString &filepath) {
+    return m_chatHistoryManager->exportHistoryTXT(*this, filepath);
+}
+
+bool ChatRoom::exportHistoryHTML(const QString &filepath) {
+    return m_chatHistoryManager->exportHistoryHTML(*this, filepath);
+}
+
+bool ChatRoom::exportHistoryPDF(const QString &filepath) {
+    return m_chatHistoryManager->exportHistoryPDF(*this, filepath);
 }
 
 void ChatRoom::saveHistory() {

@@ -22,6 +22,14 @@ class Application : public QObject{
 
 public:
 
+    enum ExportFormat {
+        HTML,
+        TXT,
+        JSON,
+        PDF,
+        UNKNOWN
+    };
+
     explicit Application(QObject *parent = nullptr);
 
     void sendLoginRequest(const LoginRequestPacket &loginRequestPacket);
@@ -29,13 +37,13 @@ public:
     void connectToServer(const QString &address, quint16 port);
     void disconnectFromHost();
 
-    void addChatMessage(const QUuid &targetRoomId, const QString &message);
+    void addChatMessage(const QUuid &targetRoomId, ChatMessagePacket chatMsg);
 
     void sendMessage(const QString& message);
 
-    void updateRooms(const LoginSuccessPacket & loginSuccessPacket);
+    void initRooms(const LoginSuccessPacket & loginSuccessPacket);
 
-    QStandardItem *addUser(const QUuid &roomId, const QUuid &userId, const UserInfo &userInfo);
+    QStandardItem *addRoomItem(const QUuid &roomId, const QUuid &userId, RoomType type, const UserInfo &userInfo);
 
     QStandardItem *enableUser(const LoginNotificationPacket &logoutNotificationPacket);
 
@@ -102,6 +110,8 @@ public:
         m_chatHistoryManager = historyManager;
     }
 
+    bool exportHistory(const QString &fileName, ExportFormat format);
+
 signals:
     // void roomSwitched(const QModelIndex &index, ChatRoom &chatRoom);
     void roomStatusChanged();
@@ -112,7 +122,7 @@ public slots:
 
 private:
 
-    void createRoom(QUuid& roomId, const QString& roomName);
+    void createRoom(const QUuid& roomId, const QString& roomName, RoomType roomType);
 
     bool setUnreadBadge(const QUuid &roomId, bool unread);
     void setUnreadBadge(QStandardItem* item, bool unread);

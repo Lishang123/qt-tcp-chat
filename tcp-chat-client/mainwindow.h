@@ -9,6 +9,10 @@
 #include <QInputDialog>
 #include <QShortcut>
 #include <QMessageBox>
+#include <QDir>
+#include <QStandardPaths>
+#include <QFileDialog>
+
 #include "../common/Packet.hpp"
 #include "Application.hpp"
 
@@ -47,6 +51,7 @@ private slots:
     void onRoomAcquired(const RoomInfoPacket& roomInfoPacket);
     void onRoomStatusChanged();
     void onItemMoved(QStandardItem* item);
+    void on_btnExport_clicked();
 
 private:
 

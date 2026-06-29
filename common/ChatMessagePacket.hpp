@@ -13,12 +13,12 @@ struct ChatMessagePacket {
     QString text;
 
     QString getMessage() const {
-        return strName() + strTimeStamp() + strMessage();
+        return strSenderName() + strTimeStamp() + strMessage();
     }
 // Houcai [2026.1.3 2:30pm] : Hello!
 private:
 
-    QString strName() const {
+    QString strSenderName() const {
         return senderName + ' ';
     }
 

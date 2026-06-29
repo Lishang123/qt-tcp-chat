@@ -5,6 +5,10 @@
 #include <QTimer>
 #include <QDataStream>
 
+#include "../common/ChatRoomInfo.hpp"
+#include "../common/ChatMessagePacket.hpp"
+
+struct ChatMessagePacket;
 class ChatHistoryManager;
 
 class ChatRoom : public QObject {
@@ -14,7 +18,7 @@ public:
     explicit ChatRoom(QObject* parent = nullptr);;
     ChatRoom(QUuid id, QString roomName, uint16_t unreadCount, std::shared_ptr<ChatHistoryManager> chatHistoryManager);
 
-    void addMessage(const QString& message);
+    void addMessage(const ChatMessagePacket &chatMsg);
 
     [[nodiscard]] QUuid getRoomId() const {
         return m_roomId;
@@ -62,14 +66,33 @@ public:
 
     bool loadHistory();
 
+    bool exportHistoryJSON(const QString &filepath);
+    bool exportHistoryTXT(const QString &filepath);
+    bool exportHistoryHTML(const QString &filepath);
+    bool exportHistoryPDF(const QString &filepath);
+
+    RoomType getRoomType() {
+        return m_roomType;
+    };
+
+    void setChatMessages(const QList<ChatMessagePacket>& chatMessages) {
+        m_messages = chatMessages;
+    }
+
+    const QList<ChatMessagePacket>& getChatMessages() const {
+        return m_messages;
+    }
+
 private slots:
     void saveHistory();
 
 private:
     void init();
 
+    RoomType m_roomType;
     QUuid m_roomId;
     QString m_roomName;
+    QList<ChatMessagePacket> m_messages;
     QStandardItemModel m_chatModel;
     u_int16_t m_unreadCount = 0;
 
@@ -83,6 +106,7 @@ inline QDataStream& operator<<(QDataStream& stream, const ChatRoom& chatRoom) {
     stream << chatRoom.getRoomId();
     stream << chatRoom.getRoomName();
     stream << chatRoom.getUnreadCount();
+    stream << chatRoom.getChatMessages();
     auto chatModel = chatRoom.getChatModel();
     for (int rowIdx = 0; rowIdx < chatModel->rowCount(); rowIdx++) {
         QStandardItem* item = chatModel->item(rowIdx);
@@ -95,12 +119,15 @@ inline QDataStream& operator>>(QDataStream& stream, ChatRoom& chatRoom) {
     QUuid roomId;
     QString roomName;
     uint16_t unreadCount;
+    QList<ChatMessagePacket> messages;
     stream >> roomId;
     stream >> roomName;
     stream >> unreadCount;
+    stream >> messages;
     chatRoom.setRoomId(roomId);
     chatRoom.setRoomName(roomName);
     chatRoom.setUnreadCount(unreadCount);
+    chatRoom.setChatMessages(messages);
     auto chatModel = chatRoom.getChatModel();
     while (!stream.atEnd()) {
         QString text;

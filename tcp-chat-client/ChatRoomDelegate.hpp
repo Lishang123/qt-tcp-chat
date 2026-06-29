@@ -7,7 +7,7 @@
 enum Roles {
     UserIdRole = Qt::UserRole + 1,
     RoomIdRole = Qt::UserRole + 2,
-    StatusRole = Qt::UserRole + 3,
+    RoomTypeRole = Qt::UserRole + 3,
     UnreadRole = Qt::UserRole + 4,
     OfflineRole = Qt::UserRole + 5,
 };
