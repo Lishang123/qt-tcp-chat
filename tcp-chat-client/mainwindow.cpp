@@ -198,7 +198,11 @@ void MainWindow::requestLoginInfo() {
 void MainWindow::on_roomView_clicked(const QModelIndex &index) {
     qInfo() << Q_FUNC_INFO << ", index : " << index << "clicked";
     auto chatRoom = m_application->switchRoom(index);
-    if (!chatRoom) return;
+    if (!chatRoom) {
+        ui->btnSend->setEnabled(false);
+        ui->textMsg->setEnabled(false);
+        return;
+    };
     //update the GUI
     // room label, buttons/fields
     ui->lblChatbox->setText(chatRoom->getRoomName());
