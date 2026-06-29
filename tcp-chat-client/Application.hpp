@@ -63,7 +63,7 @@ public:
         return m_client;
     }
 
-    [[nodiscard]] QStandardItemModel* getChatModel() {
+    [[nodiscard]] ChatModel* getChatModel() {
         return m_ChatModel;
     }
 
@@ -135,7 +135,7 @@ private:
 
     Client m_client;
     //QStringList m_list;
-    QStandardItemModel* m_ChatModel;
+    ChatModel* m_ChatModel;
     QSize m_iconSize;
     QUuid m_publicRoomId;
     QUuid m_currentRoomId;
