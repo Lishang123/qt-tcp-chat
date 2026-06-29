@@ -95,8 +95,10 @@ void Server::changeClientId(QUuid clientId , QUuid newClientId) {
     }
 }
 
-void Server::sendMessageToRoom( ChatRoom& chatRoom, const ChatMessagePacket &packet) {
+void Server::sendMessageToRoom( ChatRoom& chatRoom, ChatMessagePacket &packet) {
     qInfo() << Q_FUNC_INFO;
+    //generate a new message id
+    packet.messageId = QUuid::createUuid();
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     stream << PacketType::ChatMessage;
@@ -107,9 +109,10 @@ void Server::sendMessageToRoom( ChatRoom& chatRoom, const ChatMessagePacket &pac
 }
 
 
-void Server::broadcast(const ChatMessagePacket& packet) {
+void Server::broadcast(ChatMessagePacket& packet) {
     //Print the message for each connected client
     qInfo() << Q_FUNC_INFO;
+    packet.messageId = QUuid::createUuid();
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     stream << PacketType::ChatMessage;
