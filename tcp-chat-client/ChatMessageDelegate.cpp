@@ -41,6 +41,12 @@ void ChatMessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
     // int naturalWidth = fm.horizontalAdvance(message);
     // // content width is the maximum width of the text in the chat bubble
     // int contentWidth = std::min( naturalWidth, maxBubbleWidth - 2 * padding);
+    const QString timestamp = index.data(ChatModel::TimestampRole).toDateTime().toString("HH:mm");
+    QFont timeFont = option.font;
+    timeFont.setPointSizeF(timeFont.pointSizeF() * 0.85);
+    QFontMetrics timeFm(timeFont);
+    QSize timeSize = timeFm.size(Qt::TextSingleLine, timestamp);
+
 
     // set the width of the bubble
     qreal idealWidth = doc.idealWidth();
@@ -48,8 +54,8 @@ void ChatMessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
     doc.setTextWidth(contentWidth);
 
     QSizeF textSize = doc.size();
-    int bubbleWidth = contentWidth + 2 * padding;
-    int bubbleHeight = textSize.height() + 2 * padding;
+    int bubbleWidth = timeSize.width() > contentWidth ?  contentWidth + timeSize.width() + padding: contentWidth + 2 * padding;
+    int bubbleHeight = textSize.height() + timeSize.height() + 2 *  padding - 2;
 
     const bool outgoing = index.data(ChatModel::OutGoingRole).toBool();
     qDebug() << "message:" << message;
@@ -88,11 +94,21 @@ void ChatMessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
     // draw the message inside the bubble
     painter->save();
     painter->setPen(Qt::black);
-    painter->translate(bubbleRect.topLeft() + QPoint(8, 8));
+    painter->translate(bubbleRect.topLeft() + QPoint(padding, padding));
     doc.drawContents(painter);
     painter->restore();
 
     // draw timestamp
+    painter->save();
+    painter->setFont(timeFont);
+    painter->setPen(Qt::gray);
+
+    QPoint timePos(
+        bubbleRect.right() - 5 - timeSize.width(),
+        bubbleRect.bottom() - 5);
+
+    painter->drawText(timePos, timestamp);
+    painter->restore();
 
     // draw sender icon
 
