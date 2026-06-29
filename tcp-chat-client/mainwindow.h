@@ -14,6 +14,7 @@
 #include <QFileDialog>
 
 #include "../common/Packet.hpp"
+#include "ChatMessageDelegate.hpp"
 #include "Application.hpp"
 
 QT_BEGIN_NAMESPACE

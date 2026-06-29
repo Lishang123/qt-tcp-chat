@@ -7,7 +7,8 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
       , m_application(application) {
     ui->setupUi(this);
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->chatbox->setWordWrap(true);
+    //ui->chatbox->setWordWrap(true);
+    ui->chatbox->setItemDelegate(new ChatMessageDelegate(ui->chatbox));
 
     ui->roomView->setHeaderHidden(true);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -16,6 +17,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     font.setPointSize(16);
     ui->roomView->setFont(font);
     ui->roomView->setItemDelegate(new ChatRoomDelegate(ui->roomView));
+    // get rid of the blue bar when the item is selected
     ui->roomView->setFocusPolicy(Qt::NoFocus);
 
 
