@@ -82,7 +82,7 @@ void Client::OnReadyRead()
             emit notifyUserLogout(logoutNotificationPacket);
             break;
         }
-        case PacketType::ChatMessage: {
+        case PacketType::ChatMessagePkt: {
             ChatMessagePacket messagePacket;
             stream >> messagePacket;
             emit messageReceived(messagePacket);
@@ -139,7 +139,7 @@ void Client::disconnectFromHost() {
 void Client::sendMessage(const QString &message, QUuid roomId) {
     QByteArray data;
     QDataStream out(&data, QIODevice::WriteOnly);
-    out << PacketType::ChatMessage;
+    out << PacketType::ChatMessagePkt;
     out << ChatMessagePacket{ QUuid(),
         QDateTime::currentDateTime(), m_name, message, roomId, m_clientId};
     if (!m_socket.write(data)) {

@@ -21,7 +21,7 @@ void RoomManager::handleMessage(QUuid senderId, const QByteArray &data) {
             handleLoginRequest(senderId, loginPacket);
             break;
         }
-        case PacketType::ChatMessage: {
+        case PacketType::ChatMessagePkt: {
             ChatMessagePacket chatMessagePacket;
             ds >> chatMessagePacket;
             handleChatMessage(senderId, chatMessagePacket);

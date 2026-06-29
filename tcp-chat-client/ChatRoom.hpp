@@ -75,11 +75,11 @@ public:
         return m_roomType;
     };
 
-    void setChatMessages(const QList<ChatMessagePacket>& chatMessages) {
+    void setChatMessages(const QList<ChatMessage>& chatMessages) {
         m_messages = chatMessages;
     }
 
-    const QList<ChatMessagePacket>& getChatMessages() const {
+    const QList<ChatMessage>& getChatMessages() const {
         return m_messages;
     }
 
@@ -92,7 +92,7 @@ private:
     RoomType m_roomType;
     QUuid m_roomId;
     QString m_roomName;
-    QList<ChatMessagePacket> m_messages;
+    QList<ChatMessage> m_messages;
     QStandardItemModel m_chatModel;
     u_int16_t m_unreadCount = 0;
 
@@ -119,7 +119,7 @@ inline QDataStream& operator>>(QDataStream& stream, ChatRoom& chatRoom) {
     QUuid roomId;
     QString roomName;
     uint16_t unreadCount;
-    QList<ChatMessagePacket> messages;
+    QList<ChatMessage> messages;
     stream >> roomId;
     stream >> roomName;
     stream >> unreadCount;

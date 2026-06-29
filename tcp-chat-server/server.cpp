@@ -101,7 +101,7 @@ void Server::sendMessageToRoom( ChatRoom& chatRoom, ChatMessagePacket &packet) {
     packet.messageId = QUuid::createUuid();
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
-    stream << PacketType::ChatMessage;
+    stream << PacketType::ChatMessagePkt;
     stream << packet;
     for (auto user: chatRoom.getRoomUsers()) {
         if (user->isOnline()) sendData(m_clients[user->user_id], data);
@@ -115,7 +115,7 @@ void Server::broadcast(ChatMessagePacket& packet) {
     packet.messageId = QUuid::createUuid();
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
-    stream << PacketType::ChatMessage;
+    stream << PacketType::ChatMessagePkt;
     stream << packet;
     for (Client *a_client: m_clients.values()) {
         a_client->getSocket()->write(data);

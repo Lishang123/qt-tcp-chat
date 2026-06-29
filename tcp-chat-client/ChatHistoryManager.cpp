@@ -58,12 +58,11 @@ bool ChatHistoryManager::exportHistoryJSON(ChatRoom &chatRoom, const QString &fi
     // if (chatRoom.getRoomType() == RoomType::Self)
     root["room name"] = chatRoom.getRoomName();
     QJsonArray messages;
-    std::ranges::for_each(chatRoom.getChatMessages(), [&messages](const ChatMessagePacket &chatMessagePacket) {
+    std::ranges::for_each(chatRoom.getChatMessages(), [&messages](const ChatMessage &chatMessage) {
         QJsonObject msg;
-        msg["sender ID"] = chatMessagePacket.senderId.toString();
-        msg.insert("sender name", chatMessagePacket.senderName);
-        msg.insert("timestamp", chatMessagePacket.timestamp.toString("yyyy-MM-dd HH:mm:ss"));
-        msg.insert("message", chatMessagePacket.text);
+        msg.insert("sender name", chatMessage.senderName);
+        msg.insert("timestamp", chatMessage.timestamp.toString("yyyy-MM-dd HH:mm:ss"));
+        msg.insert("message", chatMessage.text);
         messages.append(msg);
     });
     root["messages"] = messages;
@@ -92,8 +91,8 @@ bool ChatHistoryManager::exportHistoryTXT(ChatRoom &chatRoom, const QString &fil
     stream << "room name: " << chatRoom.getRoomName() << "\n\n";
     stream << "messages:" << "\n";
 
-    std::ranges::for_each(chatRoom.getChatMessages(), [&stream](const ChatMessagePacket &chatMessagePacket) {
-        stream << chatMessagePacket.getMessage() << "\n";
+    std::ranges::for_each(chatRoom.getChatMessages(), [&stream](const ChatMessage &chatMessage) {
+        stream << chatMessage.getMessage() << "\n";
     });
 
     file.close();

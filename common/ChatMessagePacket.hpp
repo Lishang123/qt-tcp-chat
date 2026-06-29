@@ -30,6 +30,22 @@ private:
 };
 
 
+inline QDataStream& operator<<(QDataStream& stream, const ChatMessage& messagePacket) {
+    stream  << messagePacket.messageId
+            << messagePacket.timestamp
+            << messagePacket.senderName
+            << messagePacket.text;
+    return stream;
+}
+inline QDataStream& operator>>(QDataStream& stream, ChatMessage& messagePacket) {
+    stream  >> messagePacket.messageId
+            >> messagePacket.timestamp
+            >> messagePacket.senderName
+            >> messagePacket.text;
+    return stream;
+}
+
+
 struct ChatMessagePacket : ChatMessage {
     QUuid roomId;
     QUuid senderId;
