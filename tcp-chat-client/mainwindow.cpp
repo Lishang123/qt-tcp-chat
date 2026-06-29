@@ -7,7 +7,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
       , m_application(application) {
     ui->setupUi(this);
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
-
+    ui->chatbox->setWordWrap(true);
 
     ui->roomView->setHeaderHidden(true);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
