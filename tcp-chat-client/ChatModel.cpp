@@ -15,10 +15,14 @@ QVariant ChatModel::data(const QModelIndex &index, int role) const {
         case Qt::DisplayRole:
         case TextRole:
             return msg.getMessage();
+        case MsgRole:
+            return msg.text;
         case SenderRole:
             return msg.senderName;
         case TimestampRole:
             return msg.timestamp;
+        case OutGoingRole:
+            return msg.outgoing;
         default:
             return {};
     }

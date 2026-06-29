@@ -99,12 +99,24 @@ void Server::sendMessageToRoom( ChatRoom& chatRoom, ChatMessagePacket &packet) {
     qInfo() << Q_FUNC_INFO;
     //generate a new message id
     packet.messageId = QUuid::createUuid();
-    QByteArray data;
-    QDataStream stream(&data, QIODevice::WriteOnly);
-    stream << PacketType::ChatMessagePkt;
-    stream << packet;
+    // data for sender
+    QByteArray dataOut;
+    QDataStream streamOut(&dataOut, QIODevice::WriteOnly);
+    streamOut << PacketType::ChatMessagePkt;
+    streamOut << packet;
+
+    // data for receiver
+    packet.outgoing = false;
+    QByteArray dataIn;
+    QDataStream streamIn(&dataIn, QIODevice::WriteOnly);
+    streamIn << PacketType::ChatMessagePkt;
+    streamIn << packet;
     for (auto user: chatRoom.getRoomUsers()) {
-        if (user->isOnline()) sendData(m_clients[user->user_id], data);
+        if (user->isOnline()) {
+            if (user->getUserId() == packet.senderId)
+                sendData(m_clients[user->user_id], dataOut);
+            sendData(m_clients[user->user_id], dataIn);
+        }
     }
 }
 

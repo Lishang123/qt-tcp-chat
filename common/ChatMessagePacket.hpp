@@ -5,10 +5,12 @@
 #include <QDateTime>
 
 struct ChatMessage {
+    QUuid senderId;
     QUuid messageId;
     QDateTime timestamp;
     QString senderName;
     QString text;
+    bool outgoing;
 
     QString getMessage() const {
         return strSenderName() + strTimeStamp() + strMessage();
@@ -30,25 +32,29 @@ private:
 };
 
 
-inline QDataStream& operator<<(QDataStream& stream, const ChatMessage& messagePacket) {
-    stream  << messagePacket.messageId
-            << messagePacket.timestamp
-            << messagePacket.senderName
-            << messagePacket.text;
+inline QDataStream& operator<<(QDataStream& stream, const ChatMessage& chatMsg) {
+    stream  << chatMsg.senderId
+            << chatMsg.messageId
+            << chatMsg.timestamp
+            << chatMsg.senderName
+            << chatMsg.text
+            << chatMsg.outgoing;
+
     return stream;
 }
-inline QDataStream& operator>>(QDataStream& stream, ChatMessage& messagePacket) {
-    stream  >> messagePacket.messageId
-            >> messagePacket.timestamp
-            >> messagePacket.senderName
-            >> messagePacket.text;
+inline QDataStream& operator>>(QDataStream& stream, ChatMessage& chatMsg) {
+    stream  >> chatMsg.senderId
+            >> chatMsg.messageId
+            >> chatMsg.timestamp
+            >> chatMsg.senderName
+            >> chatMsg.text
+            >> chatMsg.outgoing;
     return stream;
 }
 
 
 struct ChatMessagePacket : ChatMessage {
     QUuid roomId;
-    QUuid senderId;
 };
 
 inline QDataStream& operator<<(QDataStream& stream, const ChatMessagePacket& messagePacket) {
@@ -57,7 +63,8 @@ inline QDataStream& operator<<(QDataStream& stream, const ChatMessagePacket& mes
             << messagePacket.messageId
             << messagePacket.timestamp
             << messagePacket.senderName
-            << messagePacket.text;
+            << messagePacket.text
+            << messagePacket.outgoing;
     return stream;
 }
 inline QDataStream& operator>>(QDataStream& stream, ChatMessagePacket& messagePacket) {
@@ -66,7 +73,8 @@ inline QDataStream& operator>>(QDataStream& stream, ChatMessagePacket& messagePa
             >> messagePacket.messageId
             >> messagePacket.timestamp
             >> messagePacket.senderName
-            >> messagePacket.text;
+            >> messagePacket.text
+            >> messagePacket.outgoing;
     return stream;
 }
 

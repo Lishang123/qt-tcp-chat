@@ -140,8 +140,8 @@ void Client::sendMessage(const QString &message, QUuid roomId) {
     QByteArray data;
     QDataStream out(&data, QIODevice::WriteOnly);
     out << PacketType::ChatMessagePkt;
-    out << ChatMessagePacket{ QUuid(),
-        QDateTime::currentDateTime(), m_name, message, roomId, m_clientId};
+    out << ChatMessagePacket{ m_clientId, QUuid(),
+        QDateTime::currentDateTime(), m_name, message, true , roomId};
     if (!m_socket.write(data)) {
         qCritical() << "cannot send message: " << data << m_socket.errorString();
     };

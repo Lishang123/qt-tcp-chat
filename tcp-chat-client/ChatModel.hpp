@@ -7,14 +7,16 @@
 class ChatModel : public QAbstractListModel {
     Q_OBJECT
 
+public:
+
     enum Roles
     {
         SenderRole = Qt::UserRole + 1, // sender name
-        TextRole, // whole message
+        MsgRole, // only the message
+        TextRole, // whole string representation
         TimestampRole, // timestamp
+        OutGoingRole,
     };
-
-public:
 
     explicit ChatModel(QObject *parent = nullptr);
 
