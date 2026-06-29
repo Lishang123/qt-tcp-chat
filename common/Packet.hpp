@@ -15,7 +15,7 @@ enum PacketType : quint8 {
     RoomRequest = 2,
     RoomAcquired = 21,
 
-    ChatMessage = 3,
+    ChatMessagePkt = 3,
 };
 
 struct LoginRequestPacket {

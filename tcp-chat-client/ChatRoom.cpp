@@ -13,8 +13,7 @@ ChatRoom::ChatRoom(QUuid id, QString roomName, uint16_t unreadCount, std::shared
 }
 
 void ChatRoom::addMessage(const ChatMessagePacket &chatMsg) {
-    m_messages.push_back(chatMsg);
-    m_chatModel.appendRow(new QStandardItem(chatMsg.getMessage()));
+    m_chatModel.addMessage(chatMsg);
     m_historyModifed = true;
     m_timer.start(3000); // save history after 3 secs
 }

@@ -32,8 +32,8 @@ public slots:
     void handleLoginSuccess(QUuid userId, const QString& username, const QMap<QUuid, UserInfo>& users, QList<RoomInfo>& roomInfos);
     void handleLoginFailed(QUuid userId, const QString& errorMsg);
     // void handleUserRemoved(QUuid clientId);
-    void sendMessageToRoom(ChatRoom& chatRoom, const ChatMessagePacket &packet);
-    void broadcast(const ChatMessagePacket& packet);
+    void sendMessageToRoom(ChatRoom& chatRoom, ChatMessagePacket &packet);
+    void broadcast(ChatMessagePacket& packet);
     void onDataReceived(const QByteArray & data);
     void sendRoomInfo(QUuid userId, const RoomInfo& roomInfo);
     void changeClientId(QUuid clientId, QUuid newClientId);

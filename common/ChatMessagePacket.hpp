@@ -4,9 +4,7 @@
 #include <QUuid>
 #include <QDateTime>
 
-struct ChatMessagePacket {
-    QUuid roomId;
-    QUuid senderId;
+struct ChatMessage {
     QUuid messageId;
     QDateTime timestamp;
     QString senderName;
@@ -15,9 +13,9 @@ struct ChatMessagePacket {
     QString getMessage() const {
         return strSenderName() + strTimeStamp() + strMessage();
     }
-// Houcai [2026.1.3 2:30pm] : Hello!
-private:
 
+    // Houcai [2026.1.3 2:30pm] : Hello!
+private:
     QString strSenderName() const {
         return senderName + ' ';
     }
@@ -29,6 +27,28 @@ private:
     QString strMessage() const {
         return text;
     }
+};
+
+
+inline QDataStream& operator<<(QDataStream& stream, const ChatMessage& messagePacket) {
+    stream  << messagePacket.messageId
+            << messagePacket.timestamp
+            << messagePacket.senderName
+            << messagePacket.text;
+    return stream;
+}
+inline QDataStream& operator>>(QDataStream& stream, ChatMessage& messagePacket) {
+    stream  >> messagePacket.messageId
+            >> messagePacket.timestamp
+            >> messagePacket.senderName
+            >> messagePacket.text;
+    return stream;
+}
+
+
+struct ChatMessagePacket : ChatMessage {
+    QUuid roomId;
+    QUuid senderId;
 };
 
 inline QDataStream& operator<<(QDataStream& stream, const ChatMessagePacket& messagePacket) {

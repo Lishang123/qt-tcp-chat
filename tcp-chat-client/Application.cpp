@@ -214,7 +214,7 @@ std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
     }
 
     qInfo() << Q_FUNC_INFO << "you are already in the room you selected!";
-    return nullptr;
+    return m_rooms[m_currentRoomId];
 }
 
 

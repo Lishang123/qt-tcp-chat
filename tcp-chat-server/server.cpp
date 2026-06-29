@@ -95,11 +95,13 @@ void Server::changeClientId(QUuid clientId , QUuid newClientId) {
     }
 }
 
-void Server::sendMessageToRoom( ChatRoom& chatRoom, const ChatMessagePacket &packet) {
+void Server::sendMessageToRoom( ChatRoom& chatRoom, ChatMessagePacket &packet) {
     qInfo() << Q_FUNC_INFO;
+    //generate a new message id
+    packet.messageId = QUuid::createUuid();
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
-    stream << PacketType::ChatMessage;
+    stream << PacketType::ChatMessagePkt;
     stream << packet;
     for (auto user: chatRoom.getRoomUsers()) {
         if (user->isOnline()) sendData(m_clients[user->user_id], data);
@@ -107,12 +109,13 @@ void Server::sendMessageToRoom( ChatRoom& chatRoom, const ChatMessagePacket &pac
 }
 
 
-void Server::broadcast(const ChatMessagePacket& packet) {
+void Server::broadcast(ChatMessagePacket& packet) {
     //Print the message for each connected client
     qInfo() << Q_FUNC_INFO;
+    packet.messageId = QUuid::createUuid();
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
-    stream << PacketType::ChatMessage;
+    stream << PacketType::ChatMessagePkt;
     stream << packet;
     for (Client *a_client: m_clients.values()) {
         a_client->getSocket()->write(data);

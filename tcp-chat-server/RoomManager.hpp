@@ -18,10 +18,10 @@ signals:
     void changeClientId(QUuid clientId, QUuid newClientId);
     void loginSuccess(QUuid userId, const QString& username, const QMap<QUuid, UserInfo>& users, QList<RoomInfo>& roomInfos);
     void loginFailed(QUuid userId, const QString& errorMsg);
-    void sendMessageToRoom(ChatRoom& chatRoom, const ChatMessagePacket &packet);
+    void sendMessageToRoom(ChatRoom& chatRoom, ChatMessagePacket &packet);
     //void userRemoved(QUuid userId);
     void roomCreated(QUuid userId, const RoomInfo& roomInfo);
-    void broadcast(const ChatMessagePacket &packet);
+    void broadcast(ChatMessagePacket &packet);
 
 public slots:
     void handleMessage(QUuid senderId, const QByteArray & data);
