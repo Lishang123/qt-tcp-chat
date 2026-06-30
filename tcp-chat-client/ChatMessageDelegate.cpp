@@ -6,7 +6,8 @@
 
 
 QSize ChatMessageDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-    constexpr int padding = 10;
+
+    constexpr int messagePadding = 10;
     constexpr int margin = 12;
 
     const int maxBubbleWidth = option.rect.width() * 0.7;
@@ -14,20 +15,22 @@ QSize ChatMessageDelegate::sizeHint(const QStyleOptionViewItem &option, const QM
     QTextDocument doc;
     doc.setDefaultFont(option.font);
     doc.setPlainText(index.data(ChatModel::MsgRole).toString());
-    doc.setTextWidth(maxBubbleWidth - 2 * padding);
+    //doc.setTextWidth(maxBubbleWidth - 2 * messagePadding);
+    qreal idealWidth = doc.idealWidth();
+    qreal contentWidth = std::min(idealWidth, static_cast<qreal>(maxBubbleWidth - 2 * messagePadding));
+    doc.setTextWidth(contentWidth);
 
     const QSizeF textSize = doc.size();
 
     return QSize(
         option.rect.width(),
-        textSize.height() + 2 * padding + 2 * margin);
+        textSize.height() + 2 * messagePadding + 2 * margin);
 }
 
 void ChatMessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
     constexpr int padding = 10;
     constexpr int margin = 12;
-    const int maxBubbleWidth = option.rect.width() * 0.7;
-
+    const int maxBubbleWidth = option.rect.width() * 0.7f;
     QString message = index.data(ChatModel::MsgRole).toString();
     QTextDocument doc;
     doc.setDocumentMargin(0);
@@ -41,12 +44,12 @@ void ChatMessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
     // int naturalWidth = fm.horizontalAdvance(message);
     // // content width is the maximum width of the text in the chat bubble
     // int contentWidth = std::min( naturalWidth, maxBubbleWidth - 2 * padding);
+
     const QString timestamp = index.data(ChatModel::TimestampRole).toDateTime().toString("HH:mm");
     QFont timeFont = option.font;
     timeFont.setPointSizeF(timeFont.pointSizeF() * 0.85);
     QFontMetrics timeFm(timeFont);
     QSize timeSize = timeFm.size(Qt::TextSingleLine, timestamp);
-
 
     // set the width of the bubble
     qreal idealWidth = doc.idealWidth();
