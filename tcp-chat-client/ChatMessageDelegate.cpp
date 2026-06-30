@@ -204,7 +204,7 @@ ChatMessageDelegate::BubbleLayout ChatMessageDelegate::calculateBubbleLayout(con
     // set the width of the bubble
     qreal idealWidth = doc.idealWidth();
     res.contentWidth = std::min(idealWidth, static_cast<qreal>(maxBubbleWidth - 2 * padding));
-    // doc.setTextWidth(contentWidth);
+    doc.setTextWidth(res.contentWidth);
     auto messageSize = doc.size();
 
     qDebug() << "message:" << message;
