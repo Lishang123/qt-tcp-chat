@@ -63,6 +63,8 @@ private:
     void setDisconnectedBtnStates();
     void printLoginMessage(const LoginSuccessPacket &loginSuccessPacket);
     void requestLoginInfo();
+    void clearChatBoxBg();
+    void setChatBoxBg(const QString& filepath);
 
     Ui::MainWindow *ui;
     Application* m_application;

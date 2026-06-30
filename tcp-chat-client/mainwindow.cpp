@@ -9,6 +9,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
     //ui->chatbox->setWordWrap(true);
     ui->chatbox->setItemDelegate(new ChatMessageDelegate(ui->chatbox));
+    clearChatBoxBg();
 
     ui->roomView->setHeaderHidden(true);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -197,15 +198,34 @@ void MainWindow::requestLoginInfo() {
     }
 }
 
+void MainWindow::clearChatBoxBg() {
+    ui->chatbox->setStyleSheet(
+        "QListView{"
+        "background-color: white;"
+        "}"
+    );
+}
+
+void MainWindow::setChatBoxBg(const QString &filepath) {
+    ui->chatbox->setStyleSheet(
+        "QListView{"
+        "background-image: url(:/background/background/botanics.png);"
+        "background-attachment: scrolled;"
+        "}"
+    );
+}
+
 void MainWindow::on_roomView_clicked(const QModelIndex &index) {
     qInfo() << Q_FUNC_INFO << ", index : " << index << "clicked";
     auto chatRoom = m_application->switchRoom(index);
     if (!chatRoom) {
         ui->btnSend->setEnabled(false);
         ui->textMsg->setEnabled(false);
+        clearChatBoxBg();
         return;
     };
     //update the GUI
+    setChatBoxBg({});
     // room label, buttons/fields
     ui->lblChatbox->setText(chatRoom->getRoomName());
     updateChatRoomLabel(&index);
