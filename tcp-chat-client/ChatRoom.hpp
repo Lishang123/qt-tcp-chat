@@ -17,7 +17,7 @@ Q_OBJECT
 
 public:
     explicit ChatRoom(QObject* parent = nullptr);;
-    ChatRoom(QUuid id, QString roomName, uint16_t unreadCount, std::shared_ptr<ChatHistoryManager> chatHistoryManager);
+    ChatRoom(QUuid id, QString roomName, RoomType roomType, uint16_t unreadCount, std::shared_ptr<ChatHistoryManager> chatHistoryManager);
 
     void addMessage(const ChatMessagePacket &chatMsg);
 
