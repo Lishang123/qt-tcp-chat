@@ -23,7 +23,7 @@ void ChatRoomDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     // The base function works as well.
     //QStyledItemDelegate::paint(painter, opt, index);
 
-    // Check unread status
+    // Check unread status and draw the unread badge
     bool unread = index.data(UnreadRole).toBool();
     if (!unread)
         return;

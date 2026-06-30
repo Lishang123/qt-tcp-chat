@@ -23,6 +23,8 @@ set(PROJECT_SOURCES
         ChatRoom.hpp
         ChatRoomDelegate.hpp
         ChatRoomDelegate.cpp
+        ChatMessageDelegate.hpp
+        ChatMessageDelegate.cpp
         ChatHistoryManager.hpp
         ChatHistoryManager.cpp
         ChatModel.hpp

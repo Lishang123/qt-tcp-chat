@@ -14,6 +14,7 @@
 #include <QFileDialog>
 
 #include "../common/Packet.hpp"
+#include "ChatMessageDelegate.hpp"
 #include "Application.hpp"
 
 QT_BEGIN_NAMESPACE
@@ -62,8 +63,11 @@ private:
     void setDisconnectedBtnStates();
     void printLoginMessage(const LoginSuccessPacket &loginSuccessPacket);
     void requestLoginInfo();
+    void clearChatBoxBg();
+    void setChatBoxBg(const QString& filepath);
 
     Ui::MainWindow *ui;
     Application* m_application;
+    ChatMessageDelegate* m_chatMessageDelegate;
 };
 #endif // MAINWINDOW_H

@@ -17,7 +17,7 @@ Q_OBJECT
 
 public:
     explicit ChatRoom(QObject* parent = nullptr);;
-    ChatRoom(QUuid id, QString roomName, uint16_t unreadCount, std::shared_ptr<ChatHistoryManager> chatHistoryManager);
+    ChatRoom(QUuid id, QString roomName, RoomType roomType, uint16_t unreadCount, std::shared_ptr<ChatHistoryManager> chatHistoryManager);
 
     void addMessage(const ChatMessagePacket &chatMsg);
 
@@ -76,7 +76,7 @@ public:
         return m_roomType;
     };
 
-    const QList<ChatMessage>& getChatMessages() const {
+    const QList<ChatMessage> getChatMessages() const {
         return m_chatModel.getMessages();
     }
 
@@ -102,7 +102,7 @@ inline QDataStream& operator<<(QDataStream& stream, const ChatRoom& chatRoom) {
     stream << chatRoom.getRoomId();
     stream << chatRoom.getRoomName();
     stream << chatRoom.getUnreadCount();
-    auto chatHistory = chatRoom.getChatModel()->getMessages();
+    auto chatHistory = chatRoom.getChatModel()->getChatItems();
     stream << chatHistory;
     return stream;
 }
@@ -111,7 +111,7 @@ inline QDataStream& operator>>(QDataStream& stream, ChatRoom& chatRoom) {
     QUuid roomId;
     QString roomName;
     uint16_t unreadCount;
-    QList<ChatMessage> chatHistory;
+    QList<ChatItem> chatHistory;
     stream >> roomId;
     stream >> roomName;
     stream >> unreadCount;
@@ -120,7 +120,7 @@ inline QDataStream& operator>>(QDataStream& stream, ChatRoom& chatRoom) {
     chatRoom.setRoomName(roomName);
     chatRoom.setUnreadCount(unreadCount);
     auto chatModel = chatRoom.getChatModel();
-    chatModel->setMessages(std::move(chatHistory));
+    chatModel->setChatItems(std::move(chatHistory));
     return stream;
 }
 

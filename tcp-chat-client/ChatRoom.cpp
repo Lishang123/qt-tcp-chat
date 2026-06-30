@@ -7,8 +7,8 @@ ChatRoom::ChatRoom(QObject *parent): QObject (parent) {
     init();
 }
 
-ChatRoom::ChatRoom(QUuid id, QString roomName, uint16_t unreadCount, std::shared_ptr<ChatHistoryManager> chatHistoryManager)
-        : m_roomId(id), m_roomName(roomName), m_unreadCount(unreadCount), m_chatHistoryManager(chatHistoryManager) {
+ChatRoom::ChatRoom(QUuid id, QString roomName, RoomType roomType, uint16_t unreadCount, std::shared_ptr<ChatHistoryManager> chatHistoryManager)
+        : m_roomId(id), m_roomName(roomName), m_roomType(roomType), m_unreadCount(unreadCount), m_chatHistoryManager(chatHistoryManager) {
     init();
 }
 
