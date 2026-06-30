@@ -19,6 +19,13 @@ public:
     void drawDateSeparator(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
     QSizeF layoutText(const QString &text, const QFont &font, qreal maxWidth) ;
+
+    void setShowSender(bool showSender) {
+        m_showSender = showSender;
+    }
+    
+private:
+    bool m_showSender = false;
 };
 
 

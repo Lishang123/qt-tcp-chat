@@ -8,7 +8,8 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     ui->setupUi(this);
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
     //ui->chatbox->setWordWrap(true);
-    ui->chatbox->setItemDelegate(new ChatMessageDelegate(ui->chatbox));
+    m_chatMessageDelegate = new ChatMessageDelegate(ui->chatbox);
+    ui->chatbox->setItemDelegate(m_chatMessageDelegate);
     clearChatBoxBg();
 
     ui->roomView->setHeaderHidden(true);
@@ -225,6 +226,9 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index) {
         return;
     };
     //update the GUI
+    auto roomType = chatRoom->getRoomType();
+    bool showSenderName = (roomType == RoomType::Public || roomType == RoomType::Chatgroup);
+    m_chatMessageDelegate->setShowSender(showSenderName);
     setChatBoxBg({});
     // room label, buttons/fields
     ui->lblChatbox->setText(chatRoom->getRoomName());

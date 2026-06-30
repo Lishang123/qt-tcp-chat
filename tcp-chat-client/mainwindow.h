@@ -68,5 +68,6 @@ private:
 
     Ui::MainWindow *ui;
     Application* m_application;
+    ChatMessageDelegate* m_chatMessageDelegate;
 };
 #endif // MAINWINDOW_H
