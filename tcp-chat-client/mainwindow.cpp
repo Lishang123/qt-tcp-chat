@@ -222,7 +222,7 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index) {
     if (!chatRoom) {
         ui->btnSend->setEnabled(false);
         ui->textMsg->setEnabled(false);
-        clearChatBoxBg();
+        //clearChatBoxBg();
         return;
     };
     //update the GUI
