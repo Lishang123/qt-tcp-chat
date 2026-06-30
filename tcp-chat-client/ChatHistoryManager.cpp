@@ -114,6 +114,7 @@ bool ChatHistoryManager::exportHistoryHTML(ChatRoom &chatRoom, const QString &fi
 
 bool ChatHistoryManager::exportHistoryPDF(ChatRoom &chatRoom, const QString &filepath) {
     qInfo() << Q_FUNC_INFO;
+    //TODO: try QPdfWriter (Qt 6.8)
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setOutputFileName(filepath);
