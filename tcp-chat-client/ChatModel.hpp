@@ -21,17 +21,17 @@ inline QDataStream &operator<<(QDataStream &out, const ChatItem &item)
 {
     if (const auto *msg = std::get_if<ChatMessage>(&item))
     {
-        out << Message;
+        out << ChatItemType::Message;
         out << *msg;
     }
     else if (const auto *date = std::get_if<DateSeparator>(&item))
     {
-        out << DateSep;
+        out << ChatItemType::DateSep;
         out << date->date;
     }
     else if (std::get_if<UnreadSeparator>(&item))
     {
-        out << UnreadSep;
+        out << ChatItemType::UnreadSep;
     }
     return out;
 }
@@ -111,6 +111,9 @@ public:
     void setChatItems(QList<ChatItem> messages);
 
 private:
+    void appendDateSeparatorIfNeeded(QDateTime date);
+    void appendDateSeparator(QDateTime date);
+    std::optional<ChatMessage> getLastMessage();
     QList<ChatItem> m_items;
 };
 

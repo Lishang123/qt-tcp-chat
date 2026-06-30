@@ -60,10 +60,10 @@ QHash<int, QByteArray> ChatModel::roleNames() const {
 }
 
 void ChatModel::addMessage(const ChatMessagePacket &chatMsg) {
+    appendDateSeparatorIfNeeded(chatMsg.timestamp);
     //first: index of the first new row
     //last: index of the last new row
     beginInsertRows({}, m_items.count(), m_items.count());
-    //TODO: add date separator, unread separator?
     m_items.push_back({static_cast<ChatMessage>(chatMsg)});
     endInsertRows();
 }
@@ -76,4 +76,30 @@ void ChatModel::setChatItems(QList<ChatItem>messages) {
     beginResetModel();
     m_items = std::move(messages);
     endResetModel();
+}
+
+void ChatModel::appendDateSeparatorIfNeeded(QDateTime date) {
+    if (auto lastMessage = getLastMessage()) {
+        if (lastMessage->timestamp.date() != date.date()) {
+            //append the date separator
+            appendDateSeparator(date);
+        }
+        return;
+    }
+    appendDateSeparator(date);
+}
+
+void ChatModel::appendDateSeparator(QDateTime date) {
+    beginInsertRows({}, m_items.count(), m_items.count());
+    m_items.push_back({static_cast<DateSeparator>(date.date())});
+    endInsertRows();
+}
+
+std::optional<ChatMessage> ChatModel::getLastMessage() {
+    for (int i = m_items.count() - 1; i >= 0; --i) {
+        if (const auto *msg = std::get_if<ChatMessage>(&m_items[i])) {
+            return *msg;
+        }
+    }
+    return {};
 }

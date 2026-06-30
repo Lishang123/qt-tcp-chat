@@ -9,8 +9,19 @@ QSize ChatMessageDelegate::sizeHint(const QStyleOptionViewItem &option, const QM
 
     constexpr int messagePadding = 10;
     constexpr int margin = 12;
+    constexpr int dateItemPadding = 4;
 
-    const int maxBubbleWidth = option.rect.width() * 0.7;
+    // for date separators
+    if (index.data(ChatModel::ItemTypeRole) == ChatItemType::DateSep)
+    {
+        QFont font = option.font;
+        font.setPointSizeF(font.pointSizeF() * 0.9f);
+        QFontMetrics fm(font);
+        return QSize(option.rect.width(), fm.height() + 2* dateItemPadding);
+    }
+
+    // size hint for chat messages
+    const int maxBubbleWidth = option.rect.width() * 0.7f;
 
     QTextDocument doc;
     doc.setDefaultFont(option.font);
@@ -28,6 +39,14 @@ QSize ChatMessageDelegate::sizeHint(const QStyleOptionViewItem &option, const QM
 }
 
 void ChatMessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+    if (index.data(ChatModel::ItemTypeRole) == ChatItemType::Message)
+        drawMessage(painter, option, index);
+    if (index.data(ChatModel::ItemTypeRole) == ChatItemType::DateSep)
+        drawDateSeparator(painter, option, index);
+}
+
+void ChatMessageDelegate::drawMessage(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+
     constexpr int padding = 10;
     constexpr int margin = 12;
     const int maxBubbleWidth = option.rect.width() * 0.7f;
@@ -116,6 +135,38 @@ void ChatMessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
     // draw sender icon
 
     //QStyledItemDelegate::paint(painter, option, index);
+}
+
+void ChatMessageDelegate::drawDateSeparator(QPainter *painter, const QStyleOptionViewItem &option,
+    const QModelIndex &index) const {
+    constexpr int padding = 10;
+    const QString date = index.data(ChatModel::TextRole).toString();
+    qInfo() << Q_FUNC_INFO << "date: " << date;
+    QFont dateFont = option.font;
+    dateFont.setPointSizeF(dateFont.pointSizeF() * 0.9f);
+    QFontMetrics timeFm(dateFont);
+    QSize dateSize = timeFm.size(Qt::TextSingleLine, date);
+
+    QRect dateRect(
+        (option.rect.width() - dateSize.width()) / 2,
+        option.rect.top() + 4,
+        dateSize.width() + 1.5f * padding,
+        dateSize.height() + 1 * padding);
+
+    painter->save();
+    painter->setBrush(Qt::transparent);
+    painter->setPen(Qt::lightGray);
+    painter->drawRoundedRect(dateRect, 10, 10);
+    painter->restore();
+
+    // draw the message inside the bubble
+    QPoint datePos(
+            dateRect.left() +  0.5f * padding ,
+            dateRect.bottom() - 0.5f * padding);
+    painter->save();
+    painter->setPen(Qt::darkGray);
+    painter->drawText( datePos ,date);
+    painter->restore();
 }
 
 QSizeF ChatMessageDelegate::layoutText(const QString &text, const QFont &font, qreal maxWidth) {

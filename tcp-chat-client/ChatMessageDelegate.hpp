@@ -15,8 +15,10 @@ public:
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    void drawMessage(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    void drawDateSeparator(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
-    QSizeF layoutText(const QString &text, const QFont &font, qreal maxWidth);
+    QSizeF layoutText(const QString &text, const QFont &font, qreal maxWidth) ;
 };
 
 
