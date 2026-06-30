@@ -7,7 +7,10 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
       , m_application(application) {
     ui->setupUi(this);
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->chatbox->setWordWrap(true);
+    //ui->chatbox->setWordWrap(true);
+    m_chatMessageDelegate = new ChatMessageDelegate(ui->chatbox);
+    ui->chatbox->setItemDelegate(m_chatMessageDelegate);
+    clearChatBoxBg();
 
     ui->roomView->setHeaderHidden(true);
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -16,6 +19,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     font.setPointSize(16);
     ui->roomView->setFont(font);
     ui->roomView->setItemDelegate(new ChatRoomDelegate(ui->roomView));
+    // get rid of the blue bar when the item is selected
     ui->roomView->setFocusPolicy(Qt::NoFocus);
 
 
@@ -195,15 +199,37 @@ void MainWindow::requestLoginInfo() {
     }
 }
 
+void MainWindow::clearChatBoxBg() {
+    ui->chatbox->setStyleSheet(
+        "QListView{"
+        "background-color: white;"
+        "}"
+    );
+}
+
+void MainWindow::setChatBoxBg(const QString &filepath) {
+    ui->chatbox->setStyleSheet(
+        "QListView{"
+        "background-image: url(:/background/background/botanics.png);"
+        "background-attachment: scrolled;"
+        "}"
+    );
+}
+
 void MainWindow::on_roomView_clicked(const QModelIndex &index) {
     qInfo() << Q_FUNC_INFO << ", index : " << index << "clicked";
     auto chatRoom = m_application->switchRoom(index);
     if (!chatRoom) {
         ui->btnSend->setEnabled(false);
         ui->textMsg->setEnabled(false);
+        //clearChatBoxBg();
         return;
     };
     //update the GUI
+    auto roomType = chatRoom->getRoomType();
+    bool showSenderName = (roomType == RoomType::Public || roomType == RoomType::Chatgroup);
+    m_chatMessageDelegate->setShowSender(showSenderName);
+    setChatBoxBg({});
     // room label, buttons/fields
     ui->lblChatbox->setText(chatRoom->getRoomName());
     updateChatRoomLabel(&index);

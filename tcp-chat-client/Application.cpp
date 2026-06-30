@@ -243,7 +243,7 @@ void Application::disconnectFromServer() {
 }
 
 void Application::createRoom(const QUuid &roomId, const QString &roomName, RoomType roomType) {
-    auto room = std::make_shared<ChatRoom>(roomId, roomName, 0, m_chatHistoryManager);
+    auto room = std::make_shared<ChatRoom>(roomId, roomName, roomType, 0, m_chatHistoryManager);
     room->loadHistory();
     m_rooms.insert(roomId,room);
 }

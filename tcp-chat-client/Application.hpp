@@ -140,6 +140,8 @@ private:
     QUuid m_publicRoomId;
     QUuid m_currentRoomId;
 
+    QMap<QUuid, std::shared_ptr<UserInfo>> m_userInfo;
+
     QMap<QUuid, std::shared_ptr<ChatRoom>> m_rooms;
     QStandardItemModel m_roomListModel;
     std::shared_ptr<ChatHistoryManager> m_chatHistoryManager;
