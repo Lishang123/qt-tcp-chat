@@ -207,12 +207,6 @@ ChatMessageDelegate::BubbleLayout ChatMessageDelegate::calculateBubbleLayout(con
     doc.setTextWidth(res.contentWidth);
     auto messageSize = doc.size();
 
-    qDebug() << "message:" << message;
-    qDebug() << "contentWidth:" << res.contentWidth;
-    qDebug() << "textSize:" << messageSize;
-    qDebug() << "option.rect.width()" << option.rect.width();
-    qDebug() << "maxBubbleWidth" << maxBubbleWidth;
-
     //calculate bubble size
     if (res.timeSize.width() > res.contentWidth || res.senderSize.width() > res.contentWidth) {
         res.bubbleWidth = std::max(res.timeSize.width(), res.senderSize.width()) + padding;
@@ -221,6 +215,16 @@ ChatMessageDelegate::BubbleLayout ChatMessageDelegate::calculateBubbleLayout(con
         res.bubbleWidth = res.contentWidth + 2*padding;
     }
     res.bubbleHeight = messageSize.height() + res.timeSize.height() + res.senderSize.height() + 2 *  padding - 2;
+    // qDebug() << "message:" << message;
+    // qDebug() << "contentWidth:" << res.contentWidth;
+    // qDebug() << "textSize:" << messageSize;
+    // qDebug() << "option.rect.width()" << option.rect.width();
+    // qDebug() << "maxBubbleWidth" << maxBubbleWidth;
+    // qDebug() << "message height" << messageSize.height();
+    // qDebug() << "timeSize height" << res.timeSize.height();
+    // qDebug() << "message height" << messageSize.height();
+    // qDebug() << "sender height" << res.senderSize.height();
+    // qDebug() << "bubble height" << res.bubbleHeight;
     return res;
 }
 
