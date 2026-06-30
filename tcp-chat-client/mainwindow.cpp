@@ -220,9 +220,9 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index) {
     qInfo() << Q_FUNC_INFO << ", index : " << index << "clicked";
     auto chatRoom = m_application->switchRoom(index);
     if (!chatRoom) {
-        ui->btnSend->setEnabled(false);
-        ui->textMsg->setEnabled(false);
         //clearChatBoxBg();
+        //ui->btnSend->setEnabled(false);
+        //ui->textMsg->setEnabled(false);
         return;
     };
     //update the GUI
