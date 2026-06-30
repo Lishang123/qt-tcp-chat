@@ -76,7 +76,7 @@ public:
         return m_roomType;
     };
 
-    const QList<ChatMessage>& getChatMessages() const {
+    const QList<ChatMessage> getChatMessages() const {
         return m_chatModel.getMessages();
     }
 
