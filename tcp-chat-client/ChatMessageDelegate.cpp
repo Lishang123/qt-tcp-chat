@@ -21,21 +21,16 @@ QSize ChatMessageDelegate::sizeHint(const QStyleOptionViewItem &option, const QM
     }
 
     // size hint for chat messages
-    const int maxBubbleWidth = option.rect.width() * 0.7f;
+    auto bubbleLayout = calculateBubbleLayout(option, index);
 
     QTextDocument doc;
-    doc.setDefaultFont(option.font);
+    doc.setDefaultFont(bubbleLayout.messageFont);
     doc.setPlainText(index.data(ChatModel::MsgRole).toString());
-    //doc.setTextWidth(maxBubbleWidth - 2 * messagePadding);
-    qreal idealWidth = doc.idealWidth();
-    qreal contentWidth = std::min(idealWidth, static_cast<qreal>(maxBubbleWidth - 2 * messagePadding));
-    doc.setTextWidth(contentWidth);
-
-    const QSizeF textSize = doc.size();
+    doc.setTextWidth(bubbleLayout.contentWidth);
 
     return QSize(
         option.rect.width(),
-        textSize.height() + 2 * messagePadding + 2 * margin);
+        bubbleLayout.bubbleHeight + messagePadding + margin);
 }
 
 void ChatMessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -46,15 +41,10 @@ void ChatMessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
 }
 
 void ChatMessageDelegate::drawMessage(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-
-    constexpr int padding = 10;
+    constexpr int verticalPaddingSender = 20;
+    constexpr int verticalPaddingMessage = 10;
+    constexpr int horizontalPadding = 5;
     constexpr int margin = 12;
-    const int maxBubbleWidth = option.rect.width() * 0.7f;
-    QString message = index.data(ChatModel::MsgRole).toString();
-    QTextDocument doc;
-    doc.setDocumentMargin(0);
-    doc.setDefaultFont(option.font);
-    doc.setPlainText(message);
 
     // this approach is broken: it computes width using QFrontMetrics and QTextDocument for the height
     // and these class don't compute the layout identically.
@@ -64,27 +54,16 @@ void ChatMessageDelegate::drawMessage(QPainter *painter, const QStyleOptionViewI
     // // content width is the maximum width of the text in the chat bubble
     // int contentWidth = std::min( naturalWidth, maxBubbleWidth - 2 * padding);
 
-    const QString timestamp = index.data(ChatModel::TimestampRole).toDateTime().toString("HH:mm");
-    QFont timeFont = option.font;
-    timeFont.setPointSizeF(timeFont.pointSizeF() * 0.85);
-    QFontMetrics timeFm(timeFont);
-    QSize timeSize = timeFm.size(Qt::TextSingleLine, timestamp);
+    auto bubbleLayout = calculateBubbleLayout(option, index);
+    QString message = index.data(ChatModel::MsgRole).toString();
 
-    // set the width of the bubble
-    qreal idealWidth = doc.idealWidth();
-    qreal contentWidth = std::min(idealWidth, static_cast<qreal>(maxBubbleWidth - 2 * padding));
-    doc.setTextWidth(contentWidth);
-
-    QSizeF textSize = doc.size();
-    int bubbleWidth = timeSize.width() > contentWidth ?  contentWidth + timeSize.width() + padding: contentWidth + 2 * padding;
-    int bubbleHeight = textSize.height() + timeSize.height() + 2 *  padding - 2;
+    QTextDocument doc;
+    doc.setDocumentMargin(0);
+    doc.setDefaultFont(bubbleLayout.messageFont);
+    doc.setPlainText(message);
+    doc.setTextWidth(bubbleLayout.contentWidth);
 
     const bool outgoing = index.data(ChatModel::OutGoingRole).toBool();
-    qDebug() << "message:" << message;
-    qDebug() << "contentWidth:" << contentWidth;
-    qDebug() << "textSize:" << textSize;
-    qDebug() << "option.rect.width()" << option.rect.width();
-    qDebug() << "maxBubbleWidth" << maxBubbleWidth;
 
     // draw the bubble (rectangle)
     QColor color;
@@ -92,18 +71,18 @@ void ChatMessageDelegate::drawMessage(QPainter *painter, const QStyleOptionViewI
     if (outgoing) {
         // Right aligned
         bubbleRect = QRect(
-            option.rect.right() - bubbleWidth - margin,
+            option.rect.right() - bubbleLayout.bubbleWidth - margin,
             option.rect.top() + margin,
-            bubbleWidth,
-            bubbleHeight);
+            bubbleLayout.bubbleWidth,
+            bubbleLayout.bubbleHeight);
         color = QColor(220, 248, 198);
     } else {
         // Left aligned
         bubbleRect = QRect(
             option.rect.left() + margin,
             option.rect.top() + margin,
-            bubbleWidth,
-            bubbleHeight);
+            bubbleLayout.bubbleWidth,
+            bubbleLayout.bubbleHeight);
         color = QColor(Qt::white);
     }
 
@@ -113,22 +92,39 @@ void ChatMessageDelegate::drawMessage(QPainter *painter, const QStyleOptionViewI
     painter->drawRoundedRect(bubbleRect, 10, 10);
     painter->restore();
 
+    // draw senderName
+    if (m_showSender) {
+        const QString senderName = index.data(ChatModel::SenderRole).toString();
+        QPoint senderPos(
+        bubbleRect.left() + horizontalPadding,
+        bubbleRect.top() + verticalPaddingSender);
+        painter->save();
+        painter->setFont(bubbleLayout.senderFont);
+        if (outgoing) {
+            painter->setPen(Qt::darkGreen);
+        }
+        else painter->setPen(Qt::darkMagenta);
+        painter->drawText(senderPos, senderName);
+        painter->restore();
+    }
+
     // draw the message inside the bubble
     painter->save();
     painter->setPen(Qt::black);
-    painter->translate(bubbleRect.topLeft() + QPoint(padding, padding));
+    painter->translate(bubbleRect.topLeft() + QPoint(horizontalPadding, verticalPaddingMessage+bubbleLayout.senderSize.height()));
     doc.drawContents(painter);
     painter->restore();
 
     // draw timestamp
     painter->save();
-    painter->setFont(timeFont);
+    painter->setFont(bubbleLayout.timeFont);
     painter->setPen(Qt::gray);
 
     QPoint timePos(
-        bubbleRect.right() - 5 - timeSize.width(),
+        bubbleRect.right() - 5 - bubbleLayout.timeSize.width(),
         bubbleRect.bottom() - 5);
 
+    const QString timestamp = index.data(ChatModel::TimestampRole).toDateTime().toString("HH:mm");
     painter->drawText(timePos, timestamp);
     painter->restore();
 
@@ -168,6 +164,66 @@ void ChatMessageDelegate::drawDateSeparator(QPainter *painter, const QStyleOptio
     painter->drawText( datePos ,date);
     painter->restore();
 }
+
+ChatMessageDelegate::BubbleLayout ChatMessageDelegate::calculateBubbleLayout(const QStyleOptionViewItem &option,
+    const QModelIndex &index) const {
+    BubbleLayout res;
+
+    // calculate time size
+    const QString timestamp = index.data(ChatModel::TimestampRole).toDateTime().toString("HH:mm");
+    res.timeFont = option.font;
+    res.timeFont.setPointSizeF(res.timeFont.pointSizeF() * 0.85);
+    QFontMetrics timeFm(res.timeFont);
+    res.timeSize = timeFm.size(Qt::TextSingleLine, timestamp);
+
+    // calculate sender size
+    if (m_showSender) {
+        const QString senderName = index.data(ChatModel::SenderRole).toString();
+        res.senderFont = option.font;
+        res.senderFont.setBold(true);
+        QFontMetrics senderFm(res.senderFont);
+        res.senderSize = senderFm.size(Qt::TextSingleLine, senderName);
+    }
+    else {
+        res.senderSize = QSize(0, 0);
+    }
+
+    // calculate message size
+
+    constexpr int padding = 10;
+    constexpr int margin = 12;
+
+    const int maxBubbleWidth = option.rect.width() * 0.7f;
+    QString message = index.data(ChatModel::MsgRole).toString();
+
+    res.messageFont = option.font;
+    QTextDocument doc;
+    doc.setDocumentMargin(0);
+    doc.setDefaultFont(res.messageFont);
+    doc.setPlainText(message);
+    // set the width of the bubble
+    qreal idealWidth = doc.idealWidth();
+    res.contentWidth = std::min(idealWidth, static_cast<qreal>(maxBubbleWidth - 2 * padding));
+    // doc.setTextWidth(contentWidth);
+    auto messageSize = doc.size();
+
+    qDebug() << "message:" << message;
+    qDebug() << "contentWidth:" << res.contentWidth;
+    qDebug() << "textSize:" << messageSize;
+    qDebug() << "option.rect.width()" << option.rect.width();
+    qDebug() << "maxBubbleWidth" << maxBubbleWidth;
+
+    //calculate bubble size
+    if (res.timeSize.width() > res.contentWidth || res.senderSize.width() > res.contentWidth) {
+        res.bubbleWidth = std::max(res.timeSize.width(), res.senderSize.width()) + padding;
+    }
+    else {
+        res.bubbleWidth = res.contentWidth + 2*padding;
+    }
+    res.bubbleHeight = messageSize.height() + res.timeSize.height() + res.senderSize.height() + 2 *  padding - 2;
+    return res;
+}
+
 
 QSizeF ChatMessageDelegate::layoutText(const QString &text, const QFont &font, qreal maxWidth) {
     QTextLayout layout(text, font);
