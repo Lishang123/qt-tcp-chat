@@ -71,6 +71,7 @@ MainWindow::~MainWindow() {
 
 void MainWindow::on_btnSend_clicked() {
     qInfo() << "send clicked";
+    if (ui->textMsg->text().isEmpty()) return;
     m_application->sendMessage(ui->textMsg->text());
     ui->textMsg->clear();
 }
