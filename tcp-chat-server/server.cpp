@@ -97,8 +97,6 @@ void Server::changeClientId(QUuid clientId , QUuid newClientId) {
 
 void Server::sendMessageToRoom( ChatRoom& chatRoom, ChatMessagePacket &packet) {
     qInfo() << Q_FUNC_INFO;
-    //generate a new message id
-    packet.messageId = QUuid::createUuid();
     // data for sender
     QByteArray dataOut;
     QDataStream streamOut(&dataOut, QIODevice::WriteOnly);

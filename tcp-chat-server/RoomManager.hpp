@@ -3,16 +3,25 @@
 #include <unordered_map>
 
 #include "ChatRoom.hpp"
-
+#include "DatabaseManager.hpp"
 
 struct ChatMessagePacket;
 
+// TODO: refactor this class to split responsibilities.
+// RoomManager should only manage rooms! Move UserManager, Authentication, DatabaseManager etc. up to Application.
 class RoomManager: public QObject {
     Q_OBJECT
 
 public:
     explicit RoomManager(QObject *parent = nullptr);
-
+    std::shared_ptr<User> createUser(QUuid clientId, const QString & username, bool fromDB);
+    std::shared_ptr<ChatRoom> createRoom(RoomType roomType, QUuid roomId, const QString & roomName, bool fromDB);
+    bool removeRoom(QUuid roomId);
+    void addRoomMember(std::shared_ptr<ChatRoom> room, std::shared_ptr<User> user, bool fromDB);
+    bool addRoomMember(const QUuid& roomId, const QUuid& userId);
+    void setPublicRoomId(const QUuid& roomId) {
+        m_publicRoomId = roomId;
+    }
 signals:
     void clientChanged();
     void changeClientId(QUuid clientId, QUuid newClientId);
@@ -31,16 +40,15 @@ public slots:
 
 private:
     std::shared_ptr<User> findUserByName(QString &username);
-    std::shared_ptr<User> addUser(QUuid clientId, const QString & username);
     bool handleChatMessage(QUuid senderId, ChatMessagePacket& packet);
     bool handleRoomRequest(QUuid senderId, RoomRequestPacket &packet);
-    std::shared_ptr<ChatRoom> createRoom(RoomType roomType,  QUuid roomId, const QString & roomName);
-    bool removeRoom(QUuid roomId);
+
 
     std::map<QUuid, std::shared_ptr<ChatRoom>> m_rooms;
     //std::map<QUuid, QUuid> m_userIdToRoomId;
     QUuid m_publicRoomId;
     Users m_users;
+    DatabaseManager m_dbManager;
 };
 
 

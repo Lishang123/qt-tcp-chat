@@ -35,7 +35,7 @@ struct User {
         onlineStatus = status;
     }
 
-    bool onlineStatus = true;
+    bool onlineStatus = false;
     QUuid user_id;
     QString username;
 };
