@@ -66,6 +66,7 @@ private:
     void requestLoginInfo();
     void clearChatBoxBg();
     void setChatBoxBg(const QString& filepath);
+    void clearStatusbarOnTimer(size_t seconds);
 
     Ui::MainWindow *ui;
     Application* m_application;

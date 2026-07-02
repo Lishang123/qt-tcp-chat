@@ -219,6 +219,12 @@ void MainWindow::setChatBoxBg(const QString &filepath) {
     );
 }
 
+void MainWindow::clearStatusbarOnTimer(size_t seconds) {
+    QTimer::singleShot(seconds, [this]() {
+           ui->statusbar->clearMessage();
+        });
+}
+
 void MainWindow::on_roomView_clicked(const QModelIndex &index) {
     qInfo() << Q_FUNC_INFO << ", index : " << index << "clicked";
     auto chatRoom = m_application->switchRoom(index);
@@ -362,14 +368,18 @@ void MainWindow::on_btnExport_clicked()
             chosenFormat = Application::ExportFormat::UNKNOWN;
             qCritical() << Q_FUNC_INFO << "unknown format!";
         };
-        m_application->exportHistory(fileName, chosenFormat);
+        if (m_application->exportHistory(fileName, chosenFormat)) {
+            ui->statusbar->showMessage("Chat exported to " + fileName);
+        }
+        else {
+            ui->statusbar->showMessage("Chat export failed");
+        }
+        clearStatusbarOnTimer(3000);
     }
 }
 
 void MainWindow::onHistorySaved() {
     ui->statusbar->showMessage("Chat history saved locally.");
-    QTimer::singleShot(3000, [this]() {
-       ui->statusbar->clearMessage();
-    });
+    clearStatusbarOnTimer(3000);
 }
 
