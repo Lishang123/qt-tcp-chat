@@ -8,8 +8,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # set(CMAKE_PREFIX_PATH /Users/<username>/Qt/<version>/macos)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Sql)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Sql)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -20,6 +20,8 @@ set(PROJECT_SOURCES
         server.cpp
         client.h
         client.cpp
+        DatabaseManager.hpp
+        DatabaseManager.cpp
         RoomManager.cpp
         RoomManager.hpp
         chatRoom.hpp
@@ -32,7 +34,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(tcp-chat-server
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        server.h server.cpp
+        Resources.qrc
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET tcp-chat-server APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -52,7 +54,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(tcp-chat-server PRIVATE common Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
+target_link_libraries(tcp-chat-server PRIVATE common Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Sql)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

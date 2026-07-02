@@ -3,10 +3,12 @@
 #include <unordered_map>
 
 #include "ChatRoom.hpp"
-
+#include "DatabaseManager.hpp"
 
 struct ChatMessagePacket;
 
+// TODO: refactor this class to split responsibilities.
+// RoomManager should only manage rooms! Move UserManager, Authentication, DatabaseManager etc. up to Application.
 class RoomManager: public QObject {
     Q_OBJECT
 
@@ -41,6 +43,7 @@ private:
     //std::map<QUuid, QUuid> m_userIdToRoomId;
     QUuid m_publicRoomId;
     Users m_users;
+    DatabaseManager m_dbManager;
 };
 
 
