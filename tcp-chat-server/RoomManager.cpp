@@ -73,7 +73,7 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
     if (!registered) {
         // User Registration
         // Add user to user list
-        user = addUser(userId, packet.username);
+        user = createUser(userId, packet.username);
         if (!user) {
             qCritical() << "Registering user failed: This should not happen.";
             return false;
@@ -81,10 +81,11 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
 
         //  Create the private room for user
         auto room = createRoom(RoomType::Self, userId, packet.username);
-        room->addUser(userId, user);
+        addRoomMember(room, user);
 
         //  Add user to public group
-        m_rooms[m_publicRoomId]->addUser(userId, user);
+        addRoomMember(m_rooms[m_publicRoomId], user);
+        //m_rooms[m_publicRoomId]->addUser(userId, user);
     }
 
     // Construct roomInfo
@@ -166,6 +167,7 @@ void RoomManager::removeUser(QUuid userId) {
     }
     // remove the user
     m_users.remove(userId);
+    m_dbManager.removeUser(userId);
 }
 
 void RoomManager::logoutUser(QUuid userId) {
@@ -182,15 +184,21 @@ void RoomManager::logoutUser(QUuid userId) {
 
 bool RoomManager::handleChatMessage(QUuid senderId, ChatMessagePacket &packet) {
     qInfo() << Q_FUNC_INFO;
+    //generate a new message id
+    packet.messageId = QUuid::createUuid();
+    // add message to database
+    m_dbManager.addMessage(packet.messageId, senderId, packet.roomId, packet.text, packet.timestamp);
     emit sendMessageToRoom(*m_rooms[packet.roomId], packet);
     return true;
 }
 
 bool RoomManager::handleRoomRequest(QUuid senderId, RoomRequestPacket &packet) {
     auto room = createRoom(RoomType::DirectChat, QUuid::createUuid(), packet.roomName);
-    room->addUser(senderId, m_users[senderId]); // first, add the user who requests it
+    addRoomMember(room, m_users[senderId]);// first, add the user who requests it
+    //room->addUser(senderId, m_users[senderId]);
     std::ranges::for_each(packet.memberIds, [&](const auto &memberId) {
-        room->addUser(memberId, m_users[memberId]);
+        addRoomMember(room, m_users[memberId]);
+        //room->addUser(memberId, m_users[memberId]);
     });
     auto roomInfo = room->getRoomInfo();
     roomInfo.userInfos.remove(senderId); // remove the user requesting for convenience.
@@ -209,21 +217,30 @@ std::shared_ptr<User> RoomManager::findUserByName(QString &username) {
     return nullptr;
 }
 
-std::shared_ptr<User> RoomManager::addUser(QUuid clientId, const QString & username) {
+std::shared_ptr<User> RoomManager::createUser(QUuid clientId, const QString & username) {
     qInfo() << Q_FUNC_INFO;
     auto user = std::make_shared<User>(clientId, username);
     m_users.insert(clientId, user);
+    m_dbManager.addUser(*user);
     return user;
+}
+
+void RoomManager::addRoomMember(std::shared_ptr<ChatRoom> room, std::shared_ptr<User> user) {
+    room->addUser(user->user_id, user);
+    m_dbManager.addRoomMember(room->getRoomId(), user->user_id);
 }
 
 
 std::shared_ptr<ChatRoom> RoomManager::createRoom(RoomType roomType, QUuid roomId, const QString &roomName) {
+    qDebug() << Q_FUNC_INFO;
     auto room = std::make_shared<ChatRoom>(roomType, roomId, roomName);
     m_rooms[roomId] = room;
+    m_dbManager.addRoom(*room);
     return room;
 }
 
 bool RoomManager::removeRoom(QUuid roomId) {
     m_rooms.erase(roomId);
+    m_dbManager.removeRoom(roomId);
     return true;
 }

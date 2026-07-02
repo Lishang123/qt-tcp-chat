@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QSqlError>
 #include <QFile>
+#include "ChatRoom.hpp"
 
 class DatabaseManager {
 public:
@@ -12,8 +13,17 @@ public:
 
     bool createTables();
 
-    bool addUser();
-    bool removeUser();
+    bool addUser(const User& user);
+    bool removeUser(const QUuid& userId);
+
+    bool addRoom(const ChatRoom& room);
+    bool removeRoom(const QUuid& roomId);
+
+    bool addRoomMember(const QUuid& roomId, const QUuid& userId);
+    bool removeRoomMember(const QUuid& roomId, const QUuid& userId);
+
+    bool addMessage(const QUuid& messageId, const QUuid& senderId,
+        const QUuid& roomId, const QString& content, const QDateTime& sentAt);
 
 private:
 
