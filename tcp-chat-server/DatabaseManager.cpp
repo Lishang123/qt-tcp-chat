@@ -3,6 +3,8 @@
 #include <QDir>
 #include <QStandardPaths>
 
+#include "RoomManager.hpp"
+
 
 DatabaseManager::DatabaseManager() {
     //initialize database
@@ -154,6 +156,79 @@ bool DatabaseManager::addMessage(const QUuid &messageId, const QUuid &senderId, 
     if (!query.exec()) {
         qDebug() << query.lastError() << Q_FUNC_INFO;
         return false;
+    }
+    return true;
+}
+
+bool DatabaseManager::initFromDB(RoomManager &roomManager) {
+    // load users infos
+    if (!loadAllUsers(roomManager)) {
+        return false;
+    }
+    // load room infos
+    if (!loadAllRooms(roomManager)) {
+        return false;
+    }
+    // load room member infos
+    if (!loadMembershipInfo(roomManager)) {
+        return false;
+    }
+    return true;
+}
+
+bool DatabaseManager::loadAllUsers(RoomManager &roomManager) {
+    QSqlQuery query;
+    query.prepare(R"(
+        SELECT * FROM user
+    )");
+    if (!query.exec()) {
+        qDebug() << ": Cannot load user data from the database!";
+        qDebug() << query.lastError() << Q_FUNC_INFO;
+        return false;
+    }
+    while (query.next()) {
+        QUuid userId = QUuid::fromString(query.value("id").toString());
+        QString username = query.value("username").toString();
+        roomManager.createUser(userId, username, true);
+    }
+    return true;
+}
+
+bool DatabaseManager::loadAllRooms(RoomManager &roomManager) {
+    QSqlQuery query;
+    query.prepare(R"(
+        SELECT * FROM room
+    )");
+    if (!query.exec()) {
+        qDebug() << ": Cannot load room data from the database!";
+        qDebug() << query.lastError() << Q_FUNC_INFO;
+        return false;
+    }
+    while (query.next()) {
+        QUuid roomId = QUuid::fromString(query.value("id").toString());
+        QString roomName = query.value("room_name").toString();
+        if (roomName == "public") roomManager.setPublicRoomId(roomId);
+        int roomType = query.value("room_type").toInt();
+        roomManager.createRoom(static_cast<RoomType>(roomType), roomId, roomName, true);
+    }
+    return true;
+}
+
+bool DatabaseManager::loadMembershipInfo(RoomManager &roomManager) {
+    QSqlQuery query;
+    query.prepare(R"(
+        SELECT * FROM room_member
+    )");
+    if (!query.exec()) {
+        qDebug() << ": Cannot load membership data from the database!";
+        qDebug() << query.lastError() << Q_FUNC_INFO;
+        return false;
+    }
+    while (query.next()) {
+        QUuid roomId = QUuid::fromString(query.value("room_id").toString());
+        QUuid userId = QUuid::fromString(query.value("user_id").toString());
+        if (!roomManager.addRoomMember(roomId, userId))
+            return false;
     }
     return true;
 }

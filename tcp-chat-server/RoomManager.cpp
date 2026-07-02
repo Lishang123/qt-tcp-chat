@@ -2,9 +2,14 @@
 
 
 RoomManager::RoomManager(QObject *parent) : QObject(parent) {
-    //create public room
-    auto publicRoom = createRoom(RoomType::Public, QUuid::createUuid(), "public");
-    m_publicRoomId = publicRoom->getRoomId();
+    //load from database
+    m_dbManager.initFromDB(*this);
+
+    if (m_publicRoomId.isNull()) {
+        //create public room
+        auto publicRoom = createRoom(RoomType::Public, QUuid::createUuid(), "public", false);
+        m_publicRoomId = publicRoom->getRoomId();
+    }
 }
 
 
@@ -73,18 +78,18 @@ bool RoomManager::handleLoginRequest(QUuid clientId, LoginRequestPacket & packet
     if (!registered) {
         // User Registration
         // Add user to user list
-        user = createUser(userId, packet.username);
+        user = createUser(userId, packet.username, false);
         if (!user) {
             qCritical() << "Registering user failed: This should not happen.";
             return false;
         }
 
         //  Create the private room for user
-        auto room = createRoom(RoomType::Self, userId, packet.username);
-        addRoomMember(room, user);
+        auto room = createRoom(RoomType::Self, userId, packet.username, false);
+        addRoomMember(room, user, false);
 
         //  Add user to public group
-        addRoomMember(m_rooms[m_publicRoomId], user);
+        addRoomMember(m_rooms[m_publicRoomId], user, false);
         //m_rooms[m_publicRoomId]->addUser(userId, user);
     }
 
@@ -193,11 +198,11 @@ bool RoomManager::handleChatMessage(QUuid senderId, ChatMessagePacket &packet) {
 }
 
 bool RoomManager::handleRoomRequest(QUuid senderId, RoomRequestPacket &packet) {
-    auto room = createRoom(RoomType::DirectChat, QUuid::createUuid(), packet.roomName);
-    addRoomMember(room, m_users[senderId]);// first, add the user who requests it
+    auto room = createRoom(RoomType::DirectChat, QUuid::createUuid(), packet.roomName, false);
+    addRoomMember(room, m_users[senderId], false);// first, add the user who requests it
     //room->addUser(senderId, m_users[senderId]);
     std::ranges::for_each(packet.memberIds, [&](const auto &memberId) {
-        addRoomMember(room, m_users[memberId]);
+        addRoomMember(room, m_users[memberId], false);
         //room->addUser(memberId, m_users[memberId]);
     });
     auto roomInfo = room->getRoomInfo();
@@ -217,25 +222,44 @@ std::shared_ptr<User> RoomManager::findUserByName(QString &username) {
     return nullptr;
 }
 
-std::shared_ptr<User> RoomManager::createUser(QUuid clientId, const QString & username) {
+std::shared_ptr<User> RoomManager::createUser(QUuid clientId, const QString & username, bool fromDB) {
     qInfo() << Q_FUNC_INFO;
     auto user = std::make_shared<User>(clientId, username);
     m_users.insert(clientId, user);
-    m_dbManager.addUser(*user);
+    if (!fromDB) {
+        // user registration
+        user->setOnlineStatus(true);
+        m_dbManager.addUser(*user);
+    }
     return user;
 }
 
-void RoomManager::addRoomMember(std::shared_ptr<ChatRoom> room, std::shared_ptr<User> user) {
+void RoomManager::addRoomMember(std::shared_ptr<ChatRoom> room, std::shared_ptr<User> user, bool fromDB) {
     room->addUser(user->user_id, user);
-    m_dbManager.addRoomMember(room->getRoomId(), user->user_id);
+    if (!fromDB) m_dbManager.addRoomMember(room->getRoomId(), user->user_id);
+}
+
+bool RoomManager::addRoomMember(const QUuid &roomId, const QUuid &userId) {
+    if (!m_rooms.contains(roomId)) {
+        qDebug() << "roomId not found!" << Q_FUNC_INFO;
+        return false;
+    }
+    if (!m_users.contains(userId)) {
+        qDebug() << "userId not found!" << Q_FUNC_INFO;
+        return false;
+    }
+    auto room = m_rooms[roomId];
+    auto user = m_users[userId];
+    addRoomMember(room,user, true);
+    return true;
 }
 
 
-std::shared_ptr<ChatRoom> RoomManager::createRoom(RoomType roomType, QUuid roomId, const QString &roomName) {
+std::shared_ptr<ChatRoom> RoomManager::createRoom(RoomType roomType, QUuid roomId, const QString &roomName, bool fromDB) {
     qDebug() << Q_FUNC_INFO;
     auto room = std::make_shared<ChatRoom>(roomType, roomId, roomName);
     m_rooms[roomId] = room;
-    m_dbManager.addRoom(*room);
+    if (!fromDB) m_dbManager.addRoom(*room);
     return room;
 }
 

@@ -7,6 +7,8 @@
 #include <QFile>
 #include "ChatRoom.hpp"
 
+class RoomManager;
+
 class DatabaseManager {
 public:
     DatabaseManager();
@@ -25,8 +27,12 @@ public:
     bool addMessage(const QUuid& messageId, const QUuid& senderId,
         const QUuid& roomId, const QString& content, const QDateTime& sentAt);
 
-private:
+    bool initFromDB(RoomManager& roomManager);
 
+private:
+    bool loadAllUsers(RoomManager& roomManager);
+    bool loadAllRooms(RoomManager& roomManager);
+    bool loadMembershipInfo(RoomManager& roomManager);
 };
 
 

@@ -14,7 +14,14 @@ class RoomManager: public QObject {
 
 public:
     explicit RoomManager(QObject *parent = nullptr);
-
+    std::shared_ptr<User> createUser(QUuid clientId, const QString & username, bool fromDB);
+    std::shared_ptr<ChatRoom> createRoom(RoomType roomType, QUuid roomId, const QString & roomName, bool fromDB);
+    bool removeRoom(QUuid roomId);
+    void addRoomMember(std::shared_ptr<ChatRoom> room, std::shared_ptr<User> user, bool fromDB);
+    bool addRoomMember(const QUuid& roomId, const QUuid& userId);
+    void setPublicRoomId(const QUuid& roomId) {
+        m_publicRoomId = roomId;
+    }
 signals:
     void clientChanged();
     void changeClientId(QUuid clientId, QUuid newClientId);
@@ -33,12 +40,9 @@ public slots:
 
 private:
     std::shared_ptr<User> findUserByName(QString &username);
-    std::shared_ptr<User> createUser(QUuid clientId, const QString & username);
-    void addRoomMember(std::shared_ptr<ChatRoom> room, std::shared_ptr<User> user);
     bool handleChatMessage(QUuid senderId, ChatMessagePacket& packet);
     bool handleRoomRequest(QUuid senderId, RoomRequestPacket &packet);
-    std::shared_ptr<ChatRoom> createRoom(RoomType roomType,  QUuid roomId, const QString & roomName);
-    bool removeRoom(QUuid roomId);
+
 
     std::map<QUuid, std::shared_ptr<ChatRoom>> m_rooms;
     //std::map<QUuid, QUuid> m_userIdToRoomId;
