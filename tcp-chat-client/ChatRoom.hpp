@@ -80,6 +80,9 @@ public:
         return m_chatModel.getMessages();
     }
 
+signals:
+    void historySaved();
+
 private slots:
     void saveHistory();
 
