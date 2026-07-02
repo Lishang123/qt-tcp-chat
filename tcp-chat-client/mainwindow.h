@@ -53,6 +53,7 @@ private slots:
     void onRoomStatusChanged();
     void onItemMoved(QStandardItem* item);
     void on_btnExport_clicked();
+    void onHistorySaved();
 
 private:
 

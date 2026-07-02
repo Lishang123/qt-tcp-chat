@@ -15,7 +15,7 @@ ChatRoom::ChatRoom(QUuid id, QString roomName, RoomType roomType, uint16_t unrea
 void ChatRoom::addMessage(const ChatMessagePacket &chatMsg) {
     m_chatModel.addMessage(chatMsg);
     m_historyModifed = true;
-    m_timer.start(3000); // save history after 3 secs
+    m_timer.start(2000); // save history after 2 secs
 }
 
 bool ChatRoom::loadHistory() {
@@ -41,6 +41,7 @@ bool ChatRoom::exportHistoryPDF(const QString &filepath) {
 void ChatRoom::saveHistory() {
     if (!m_historyModifed) return;
     m_chatHistoryManager->saveHistory(*this);
+    emit historySaved();
     m_historyModifed = false;
 }
 

@@ -115,6 +115,7 @@ public:
 signals:
     // void roomSwitched(const QModelIndex &index, ChatRoom &chatRoom);
     void roomStatusChanged();
+    void historySaved();
     void itemMoved(QStandardItem* userItem);
 
 public slots:

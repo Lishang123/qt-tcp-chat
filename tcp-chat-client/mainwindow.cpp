@@ -31,6 +31,8 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
 
     connect(m_application, &Application::roomStatusChanged, this, &MainWindow::onRoomStatusChanged);
     connect(m_application, &Application::itemMoved, this, &MainWindow::onItemMoved);
+    connect(m_application, &Application::historySaved, this, &MainWindow::onHistorySaved);
+
 
     connect(&m_application->getClient(), &Client::disconnected, this, &MainWindow::onClientDisconnected);
 
@@ -362,5 +364,12 @@ void MainWindow::on_btnExport_clicked()
         };
         m_application->exportHistory(fileName, chosenFormat);
     }
+}
+
+void MainWindow::onHistorySaved() {
+    ui->statusbar->showMessage("Chat history saved locally.");
+    QTimer::singleShot(3000, [this]() {
+       ui->statusbar->clearMessage();
+    });
 }
 
