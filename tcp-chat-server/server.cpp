@@ -111,9 +111,11 @@ void Server::sendMessageToRoom( ChatRoom& chatRoom, ChatMessagePacket &packet) {
     streamIn << packet;
     for (auto user: chatRoom.getRoomUsers()) {
         if (user->isOnline()) {
-            if (user->getUserId() == packet.senderId)
+            if (user->getUserId() == packet.senderId) {
                 sendData(m_clients[user->user_id], dataOut);
-            sendData(m_clients[user->user_id], dataIn);
+            } else {
+                sendData(m_clients[user->user_id], dataIn);
+            }
         }
     }
 }
@@ -128,7 +130,7 @@ void Server::broadcast(ChatMessagePacket& packet) {
     stream << PacketType::ChatMessagePkt;
     stream << packet;
     for (Client *a_client: m_clients.values()) {
-        a_client->getSocket()->write(data);
+        sendData(a_client, data);
     }
     emit clientChanged();
 }
@@ -186,12 +188,12 @@ size_t Server::getClientsCount() {
 
 
 void Server::sendData(Client *client, const QByteArray &data) {
-    client->getSocket()->write(data);
+    client->sendMessage(data);
 }
 
 
 void Server::sendData(const QByteArray &data) {
     for (Client *a_client: m_clients.values()) {
-        a_client->getSocket()->write(data);
+        sendData(a_client, data);
     }
 }
