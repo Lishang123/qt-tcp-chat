@@ -4,6 +4,7 @@
 #include <QUuid>
 #include <QTimer>
 #include <QDataStream>
+#include <cstdint>
 
 #include "ChatModel.hpp"
 #include "../common/ChatRoomInfo.hpp"
@@ -37,7 +38,7 @@ public:
         return &m_chatModel;
     }
 
-    [[nodiscard]] u_int16_t getUnreadCount() const {
+    [[nodiscard]] uint16_t getUnreadCount() const {
         return m_unreadCount;
     }
 
@@ -57,7 +58,7 @@ public:
         m_roomName = m_room_name;
     }
 
-    void setUnreadCount(u_int16_t m_unread_count) {
+    void setUnreadCount(uint16_t m_unread_count) {
         m_unreadCount = m_unread_count;
     }
 
@@ -93,7 +94,7 @@ private:
     QUuid m_roomId;
     QString m_roomName;
     ChatModel m_chatModel;
-    u_int16_t m_unreadCount = 0;
+    uint16_t m_unreadCount = 0;
 
     std::shared_ptr<ChatHistoryManager> m_chatHistoryManager;
     QTimer m_timer;
