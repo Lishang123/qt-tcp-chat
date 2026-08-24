@@ -6,6 +6,7 @@
 #include <QRunnable>
 #include <QList>
 #include <QUuid>
+#include "../common/TcpFraming.hpp"
 
 class Client : public QObject{
 
@@ -25,6 +26,8 @@ public:
         return m_clientId;
     }
 
+    void sendMessage(const QByteArray& message);
+
 
 signals:
     void disconnected();
@@ -34,7 +37,6 @@ signals:
 private slots:
 
     void readyRead();
-    void sendMessage(const QByteArray& message);
 
 public:
     [[nodiscard]] QTcpSocket * getSocket() const {
@@ -45,6 +47,7 @@ private:
     QUuid m_clientId;
     QTcpSocket* m_socket;
     qintptr m_socketDescriptor;
+    QByteArray m_receiveBuffer;
 
 };
 

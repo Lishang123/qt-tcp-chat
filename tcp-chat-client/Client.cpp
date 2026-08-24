@@ -49,9 +49,29 @@ void Client::onDisconnected()
 
 void Client::OnReadyRead()
 {
-    qInfo() << Q_FUNC_INFO;
-    QByteArray data = m_socket.readAll();
-    QDataStream stream(&data, QIODevice::ReadOnly);
+    m_receiveBuffer.append(m_socket.readAll());
+
+    QByteArray data;
+    while (true) {
+        const auto result = TcpFraming::takeNextFrame(m_receiveBuffer, data);
+        if (result == TcpFraming::ReadResult::Incomplete) {
+            return;
+        }
+        if (result == TcpFraming::ReadResult::Invalid) {
+            const QString errorMessage = tr("The server sent an invalid or oversized message.");
+            qWarning() << Q_FUNC_INFO << errorMessage;
+            emit errorOccured(errorMessage);
+            m_socket.disconnectFromHost();
+            return;
+        }
+
+        processPacket(data);
+    }
+}
+
+void Client::processPacket(const QByteArray &data)
+{
+    QDataStream stream(data);
     PacketType packetType;
     stream >> packetType;
     qInfo() << "packet type:" << packetType;
@@ -116,8 +136,8 @@ void Client::sendLoginRequest(const LoginRequestPacket &loginRequestPacket) {
     QDataStream out(&data, QIODevice::WriteOnly);
     out << PacketType::LoginRequest;
     out << loginRequestPacket;
-    if (!m_socket.write(data)) {
-        qCritical() << Q_FUNC_INFO << "\tCannot send login reqeust:\t" << data << m_socket.errorString() ;
+    if (!writePacket(data)) {
+        qCritical() << Q_FUNC_INFO << "\tCannot send login request:\t" << data << m_socket.errorString() ;
     }
 }
 
@@ -126,8 +146,8 @@ void Client::sendRoomRequest(const RoomRequestPacket &roomRequestPacket) {
     QDataStream out(&data, QIODevice::WriteOnly);
     out << PacketType::RoomRequest;
     out << roomRequestPacket;
-    if (!m_socket.write(data)) {
-        qCritical() << Q_FUNC_INFO << "\tCannot send room reqeust:\t" << data << m_socket.errorString() ;
+    if (!writePacket(data)) {
+        qCritical() << Q_FUNC_INFO << "\tCannot send room request:\t" << data << m_socket.errorString() ;
     }
 }
 
@@ -142,9 +162,17 @@ void Client::sendMessage(const QString &message, QUuid roomId) {
     out << PacketType::ChatMessagePkt;
     out << ChatMessagePacket{ m_clientId, QUuid(),
         QDateTime::currentDateTime(), m_name, message, true , roomId};
-    if (!m_socket.write(data)) {
+    if (!writePacket(data)) {
         qCritical() << "cannot send message: " << data << m_socket.errorString();
     };
 }
 
-
+bool Client::writePacket(const QByteArray &data)
+{
+    const QByteArray framedData = TcpFraming::frame(data);
+    if (framedData.isEmpty() && !data.isEmpty()) {
+        qWarning() << Q_FUNC_INFO << "Refusing to send oversized frame";
+        return false;
+    }
+    return m_socket.write(framedData) >= 0;
+}

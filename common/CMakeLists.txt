@@ -14,6 +14,7 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core REQUIRED)
 
 add_library(common STATIC
         Packet.hpp
+        TcpFraming.hpp
         ChatMessagePacket.hpp
         ChatRoomInfo.hpp
 )

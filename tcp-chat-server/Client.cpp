@@ -19,11 +19,29 @@ void Client::start() {
 }
 
 void Client::readyRead() {
-    QByteArray data = m_socket->readAll();
-    qInfo() << Q_FUNC_INFO;
-    emit dataReceived(data);
+    m_receiveBuffer.append(m_socket->readAll());
+
+    QByteArray data;
+    while (true) {
+        const auto result = TcpFraming::takeNextFrame(m_receiveBuffer, data);
+        if (result == TcpFraming::ReadResult::Incomplete) {
+            return;
+        }
+        if (result == TcpFraming::ReadResult::Invalid) {
+            qWarning() << Q_FUNC_INFO << "Invalid or oversized frame; disconnecting client";
+            m_socket->disconnectFromHost();
+            return;
+        }
+
+        emit dataReceived(data);
+    }
 }
 
 void Client::sendMessage(const QByteArray& message) {
-    m_socket->write(message);
+    const QByteArray framedMessage = TcpFraming::frame(message);
+    if (framedMessage.isEmpty() && !message.isEmpty()) {
+        qWarning() << Q_FUNC_INFO << "Refusing to send oversized frame";
+        return;
+    }
+    m_socket->write(framedMessage);
 }

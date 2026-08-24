@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include "../common/Packet.hpp"
 #include "../common/ChatMessagePacket.hpp"
+#include "../common/TcpFraming.hpp"
 
 struct ChatMessagePacket;
 
@@ -42,6 +43,9 @@ private slots:
 
     void error(QAbstractSocket::SocketError error);
 
+    void processPacket(const QByteArray &data);
+    bool writePacket(const QByteArray &data);
+
 public:
     [[nodiscard]] QTcpSocket & getSocket() {
         return m_socket;
@@ -63,6 +67,7 @@ private:
     QUuid m_clientId;
     QString m_name;
     QTcpSocket m_socket;
+    QByteArray m_receiveBuffer;
 
 };
 
