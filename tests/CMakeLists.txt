@@ -6,8 +6,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Test)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Test)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network Test Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network Test Widgets)
 
 add_executable(tst_tcp_framing
         tst_tcp_framing.cpp
@@ -25,3 +25,25 @@ target_include_directories(tst_tcp_framing
 )
 
 add_test(NAME tcp_framing COMMAND tst_tcp_framing)
+
+add_executable(tst_client_packets
+        tst_client_packets.cpp
+        ${CMAKE_SOURCE_DIR}/tcp-chat-client/Client.cpp
+)
+
+target_link_libraries(tst_client_packets
+        PRIVATE
+        common
+        Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Network
+        Qt${QT_VERSION_MAJOR}::Test
+        Qt${QT_VERSION_MAJOR}::Widgets
+)
+
+target_include_directories(tst_client_packets
+        PRIVATE
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/tcp-chat-client
+)
+
+add_test(NAME client_packets COMMAND tst_client_packets)
