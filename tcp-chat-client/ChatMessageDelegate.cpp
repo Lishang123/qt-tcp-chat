@@ -137,7 +137,7 @@ void ChatMessageDelegate::drawDateSeparator(QPainter *painter, const QStyleOptio
     const QModelIndex &index) const {
     constexpr int padding = 10;
     const QString date = index.data(ChatModel::TextRole).toString();
-    qInfo() << Q_FUNC_INFO << "date: " << date;
+    //qInfo() << Q_FUNC_INFO << "date: " << date;
     QFont dateFont = option.font;
     dateFont.setPointSizeF(dateFont.pointSizeF() * 0.9f);
     QFontMetrics timeFm(dateFont);
