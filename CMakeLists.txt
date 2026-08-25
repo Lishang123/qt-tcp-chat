@@ -4,6 +4,9 @@ project(qt-tcp-chat)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+enable_testing()
+
 add_subdirectory(tcp-chat-client)
 add_subdirectory(tcp-chat-server)
 add_subdirectory(common)
+add_subdirectory(tests)
