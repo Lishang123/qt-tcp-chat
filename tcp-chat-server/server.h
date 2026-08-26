@@ -36,6 +36,7 @@ public slots:
     void broadcast(ChatMessagePacket& packet);
     void onDataReceived(const QByteArray & data);
     void sendRoomInfo(QUuid userId, const RoomInfo& roomInfo);
+    void sendRoomDeleted(QUuid userId, const RoomDeletedPacket& roomDeletedPacket);
     void changeClientId(QUuid clientId, QUuid newClientId);
 
 protected:

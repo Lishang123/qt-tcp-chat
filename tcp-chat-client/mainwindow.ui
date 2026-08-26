@@ -34,7 +34,7 @@
         </size>
        </property>
       </widget>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
@@ -95,6 +95,9 @@
       </widget>
      </widget>
     </item>
+    <item>
+     <widget class="QTreeView" name="groupMemberView"/>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -106,8 +109,29 @@
      <height>33</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuGroups">
+    <property name="title">
+     <string>Groups</string>
+    </property>
+    <addaction name="actionNew_Group"/>
+    <addaction name="actionDelete_Group"/>
+   </widget>
+   <addaction name="menuGroups"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionNew_Group">
+   <property name="text">
+    <string>New Group</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionDelete_Group">
+   <property name="text">
+    <string>Delete Group</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

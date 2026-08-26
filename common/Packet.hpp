@@ -14,6 +14,8 @@ enum PacketType : quint8 {
 
     RoomRequest = 2,
     RoomAcquired = 21,
+    RoomDeleteRequest = 22,
+    RoomDeleted = 23,
 
     ChatMessagePkt = 3,
 };
@@ -128,6 +130,34 @@ inline QDataStream& operator<<(QDataStream& stream, const RoomInfoPacket& roomIn
 
 inline QDataStream& operator>>(QDataStream& stream, RoomInfoPacket& roomInfo) {
     stream  >> roomInfo.roomInfo;
+    return stream;
+}
+
+struct RoomDeleteRequestPacket {
+    QUuid roomId;
+};
+
+inline QDataStream& operator<<(QDataStream& stream, const RoomDeleteRequestPacket& roomDeletePacket) {
+    stream << roomDeletePacket.roomId;
+    return stream;
+}
+
+inline QDataStream& operator>>(QDataStream& stream, RoomDeleteRequestPacket& roomDeletePacket) {
+    stream >> roomDeletePacket.roomId;
+    return stream;
+}
+
+struct RoomDeletedPacket {
+    QUuid roomId;
+};
+
+inline QDataStream& operator<<(QDataStream& stream, const RoomDeletedPacket& roomDeletedPacket) {
+    stream << roomDeletedPacket.roomId;
+    return stream;
+}
+
+inline QDataStream& operator>>(QDataStream& stream, RoomDeletedPacket& roomDeletedPacket) {
+    stream >> roomDeletedPacket.roomId;
     return stream;
 }
 

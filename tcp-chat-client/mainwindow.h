@@ -54,6 +54,10 @@ private slots:
     void onItemMoved(QStandardItem* item);
     void on_btnExport_clicked();
     void onHistorySaved();
+    void onRoomDeleted(const RoomDeletedPacket& roomDeletedPacket);
+    void showRoomViewContextMenu(const QPoint &position);
+    void on_actionNew_Group_triggered();
+    void on_actionDelete_Group_triggered();
 
 private:
 
@@ -67,6 +71,8 @@ private:
     void clearChatBoxBg();
     void setChatBoxBg(const QString& filepath);
     void clearStatusbarOnTimer(size_t seconds);
+    bool isGroupsCategoryIndex(const QModelIndex &index) const;
+    bool isChatGroupIndex(const QModelIndex &index) const;
 
     Ui::MainWindow *ui;
     Application* m_application;

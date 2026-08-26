@@ -29,6 +29,8 @@ set(PROJECT_SOURCES
         ChatHistoryManager.cpp
         ChatModel.hpp
         ChatModel.cpp
+        CreateGroupDialog.hpp
+        CreateGroupDialog.cpp
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
