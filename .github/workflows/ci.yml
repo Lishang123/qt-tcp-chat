@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - dev
+      - tests
+  pull_request:
+
+# Prevent multiple runs of the same workflow/branch from running at the same time.
+# If a new run starts in the same concurrency group, cancel the older run that is still running.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Static checks
+    if: github.event_name == 'push'
+    runs-on: macos-15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.11.0'
+          cache: true # reuse the previously installed Qt files for the same Qt version/platform/configuration
+
+      - name: Install clang-tidy
+        run: |
+          if ! command -v clang-tidy >/dev/null 2>&1; then
+            brew install llvm
+            echo "/opt/homebrew/opt/llvm/bin" >> "$GITHUB_PATH"
+            echo "/usr/local/opt/llvm/bin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run clang-tidy
+        run: |
+          SDKROOT="$(xcrun --show-sdk-path)"
+          git ls-files '*.cpp' | xargs clang-tidy \
+            -p build \
+            --checks='clang-diagnostic-*,clang-analyzer-*' \
+            --quiet \
+            --extra-arg-before=-isysroot \
+            --extra-arg-before="$SDKROOT"
+
+  unit-tests:
+    name: Unit tests
+    if: github.event_name == 'pull_request'
+    runs-on: macos-15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.11.0'
+          cache: true
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
