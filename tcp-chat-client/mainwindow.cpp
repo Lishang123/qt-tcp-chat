@@ -10,6 +10,10 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
       , m_application(application) {
     ui->setupUi(this);
     ui->groupMemberView->setVisible(false);
+    ui->groupMemberView->setSelectionMode(QAbstractItemView::SelectionMode::NoSelection);
+    ui->groupMemberView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->groupMemberView->setIconSize(QSize(26, 26));
+    ui->groupMemberView->setModel(&m_groupMemberModel);
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
     //ui->chatbox->setWordWrap(true);
     m_chatMessageDelegate = new ChatMessageDelegate(ui->chatbox);
@@ -241,27 +245,14 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index) {
         return;
     };
     //update the GUI
-    auto roomType = chatRoom->getRoomType();
-    bool showSenderName = (roomType == RoomType::Public || roomType == RoomType::Chatgroup);
-    m_chatMessageDelegate->setShowSender(showSenderName);
-    setChatBoxBg({});
-    // room label, buttons/fields
-    ui->lblChatbox->setText(chatRoom->getRoomName());
-    updateChatRoomLabel(&index);
-    // chat box
-    ui->chatbox->setModel(m_application->getChatModel());
-
-    // debug info
-    auto *sm = ui->roomView->selectionModel();
-    if (sm->hasSelection()) {
-        QModelIndex index = sm->selectedIndexes().first();
-        qDebug() << Q_FUNC_INFO << index.data(UserIdRole).toString();
-    }
+    updateGUIAtSwitch(index, chatRoom);
 }
 
 void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
     qInfo() << Q_FUNC_INFO;
     RoomInfo roomInfo = roomInfoPacket.roomInfo;
+    QModelIndex switchedIndex;
+    std::shared_ptr<ChatRoom> switchedRoom;
     switch (roomInfo.roomType) {
         case RoomType::DirectChat: {
             auto userInfos = roomInfo.userInfos;
@@ -270,29 +261,31 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
                 qCritical() << Q_FUNC_INFO << "Should not happend!";
                 return;
             }
+            switchedIndex = ui->roomView->currentIndex();
+            switchedRoom = m_application->getCurrentRoom();
             break;
         }
         case RoomType::Chatgroup: {
-            auto *item = m_application->addChatGroup(roomInfo.roomId, roomInfo.roomName);
-            ui->roomView->setCurrentIndex(item->index());
-            m_application->switchRoom(item->index());
+            auto *item = m_application->addChatGroupFromRoomInfo(roomInfo);
+            if (!item) {
+                return;
+            }
+            switchedIndex = item->index();
+            ui->roomView->setCurrentIndex(switchedIndex);
+            switchedRoom = m_application->switchRoom(switchedIndex);
             break;
         }
         case RoomType::Self:
         case RoomType::Public:
         default: {
             qInfo() << Q_FUNC_INFO << "This shouldn't happen!";
+            return;
         }
     }
-    qCritical() << Q_FUNC_INFO << "Setting chat model...";
-    ui->chatbox->setModel(m_application->getChatModel());
-    QModelIndex index = ui->roomView->currentIndex();
-    if (index.isValid()) {
-        QString text = index.data(Qt::DisplayRole).toString();
-        ui->lblChatbox->setText(text);
+
+    if (switchedRoom) {
+        updateGUIAtSwitch(switchedIndex, switchedRoom);
     }
-    ui->btnSend->setEnabled(true);
-    ui->textMsg->setEnabled(true);
     qCritical() << Q_FUNC_INFO << "finished.";
 }
 
@@ -414,14 +407,47 @@ void MainWindow::showRoomViewContextMenu(const QPoint &position)
     }
     else if (isChatGroupIndex(index)) {
         ui->roomView->setCurrentIndex(index);
+        menu.addAction(tr("Show Members"), this, &MainWindow::showSelectedGroupMembers);
         menu.addAction(ui->actionDelete_Group);
-        //TODO: show group members
     }
     else {
         return;
     }
 
     menu.exec(ui->roomView->viewport()->mapToGlobal(position));
+}
+
+void MainWindow::showSelectedGroupMembers()
+{
+    const QModelIndex index = ui->roomView->currentIndex();
+    if (!isChatGroupIndex(index)) {
+        return;
+    }
+    on_roomView_clicked(index);
+    showGroupMembers(index);
+}
+
+void MainWindow::showGroupMembers(const QModelIndex &index)
+{
+    if (!isChatGroupIndex(index)) {
+        hideGroupMembers();
+        return;
+    }
+
+    m_groupMemberModel.clear();
+    const auto members = m_application->getRoomMembers(index.data(RoomIdRole).toUuid());
+    for (const auto &[_, userInfo] : members.asKeyValueRange()) {
+        auto *item = new QStandardItem(QIcon(":/icons/icons/mann-avatar.png"), userInfo.username);
+        item->setData(!userInfo.isOnline, OfflineRole);
+        m_groupMemberModel.appendRow(item);
+    }
+    ui->groupMemberView->setVisible(true);
+}
+
+void MainWindow::hideGroupMembers()
+{
+    m_groupMemberModel.clear();
+    ui->groupMemberView->setVisible(false);
 }
 
 void MainWindow::on_actionNew_Group_triggered()
@@ -455,6 +481,36 @@ void MainWindow::on_actionDelete_Group_triggered()
 
     if (!m_application->sendDeleteGroupRequest(index.data(RoomIdRole).toUuid())) {
         QMessageBox::warning(this, tr("Delete Group"), tr("Cannot delete the selected group."));
+    }
+}
+
+void MainWindow::updateGUIAtSwitch(const QModelIndex &index, std::shared_ptr<ChatRoom> chatRoom) {
+    if (!chatRoom) {
+        return;
+    }
+    auto roomType = chatRoom->getRoomType();
+    bool showSenderName = (roomType == RoomType::Public || roomType == RoomType::Chatgroup);
+    m_chatMessageDelegate->setShowSender(showSenderName);
+    if (ui->groupMemberView->isVisible()) {
+        if (roomType == RoomType::Chatgroup) {
+            showGroupMembers(index);
+        }
+        else {
+            hideGroupMembers();
+        }
+    }
+    setChatBoxBg({});
+    // room label, buttons/fields
+    ui->lblChatbox->setText(chatRoom->getRoomName());
+    updateChatRoomLabel(&index);
+    // chat box
+    ui->chatbox->setModel(m_application->getChatModel());
+
+    // debug info
+    auto *sm = ui->roomView->selectionModel();
+    if (sm->hasSelection()) {
+        QModelIndex index = sm->selectedIndexes().first();
+        qDebug() << Q_FUNC_INFO << index.data(UserIdRole).toString();
     }
 }
 

@@ -61,9 +61,13 @@ public:
 
     QStandardItem *addChatGroup(const QUuid &roomId, const QString &groupName, RoomType roomType = RoomType::Chatgroup);
 
+    QStandardItem *addChatGroupFromRoomInfo(const RoomInfo &roomInfo);
+
     bool removeChatGroup(const QUuid &roomId);
 
     QList<Contact> getContacts() const;
+
+    QMap<QUuid, UserInfo> getRoomMembers(const QUuid &roomId) const;
 
     void removeUser(const LogoutNotificationPacket &logoutNotificationPacket);
 
@@ -139,7 +143,7 @@ public slots:
 
 private:
 
-    void createRoom(const QUuid& roomId, const QString& roomName, RoomType roomType);
+    void createRoom(const QUuid& roomId, const QString& roomName, RoomType roomType, const QMap<QUuid, UserInfo> &userInfos = {});
 
     bool setUnreadBadge(const QUuid &roomId, bool unread);
     void setUnreadBadge(QStandardItem* item, bool unread);

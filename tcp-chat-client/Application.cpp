@@ -102,7 +102,8 @@ void Application::initRooms(const LoginSuccessPacket & loginSuccessPacket) {
         // create ChatRoom object and add it to the room list
         createRoom(roomInfo.roomId,
             roomInfo.roomType == RoomType::Chatgroup ? roomInfo.roomName : roomInfo.userInfos.first().username,
-            roomInfo.roomType);
+            roomInfo.roomType,
+            roomInfo.userInfos);
     }
 
     // add users without rooms
@@ -162,6 +163,17 @@ QStandardItem *Application::addChatGroup(const QUuid &roomId, const QString &gro
     return item;
 }
 
+QStandardItem *Application::addChatGroupFromRoomInfo(const RoomInfo &roomInfo) {
+    if (roomInfo.roomType != RoomType::Chatgroup || roomInfo.roomId.isNull()) {
+        return nullptr;
+    }
+
+    auto *item = addChatGroup(roomInfo.roomId, roomInfo.roomName);
+
+    createRoom(roomInfo.roomId, roomInfo.roomName, roomInfo.roomType, roomInfo.userInfos);
+    return item;
+}
+
 QList<Application::Contact> Application::getContacts() const {
     QList<Contact> contacts;
     for (int categoryRow = 1; categoryRow < m_roomListModel.rowCount(); ++categoryRow) {
@@ -201,6 +213,13 @@ bool Application::removeChatGroup(const QUuid &roomId) {
     item->parent()->removeRow(item->row());
     emit roomStatusChanged();
     return true;
+}
+
+QMap<QUuid, UserInfo> Application::getRoomMembers(const QUuid &roomId) const {
+    if (!m_rooms.contains(roomId)) {
+        return {};
+    }
+    return m_rooms[roomId]->getUserInfos();
 }
 
 
@@ -324,8 +343,9 @@ void Application::disconnectFromServer() {
     m_client.disconnectFromHost();
 }
 
-void Application::createRoom(const QUuid &roomId, const QString &roomName, RoomType roomType) {
+void Application::createRoom(const QUuid &roomId, const QString &roomName, RoomType roomType, const QMap<QUuid, UserInfo> &userInfos) {
     auto room = std::make_shared<ChatRoom>(roomId, roomName, roomType, 0, m_chatHistoryManager);
+    room->setUserInfos(userInfos);
     connect(room.get(), &ChatRoom::historySaved, this, &Application::historySaved);
     room->loadHistory();
     m_rooms.insert(roomId,room);
