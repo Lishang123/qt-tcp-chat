@@ -43,6 +43,35 @@ void Application::sendMessage(const QString &message) {
     m_client.sendMessage(message, m_currentRoomId);
 }
 
+bool Application::sendChatGroupRequest(const QString &groupName, const QList<QUuid> &memberIds) {
+    const auto request = createChatGroupRequest(groupName, memberIds);
+    if (!request) {
+        return false;
+    }
+    m_client.sendRoomRequest(*request);
+    return true;
+}
+
+bool Application::sendDeleteGroupRequest(const QUuid &roomId) {
+    if (roomId.isNull()) {
+        return false;
+    }
+    auto *item = getRoomItem(roomId);
+    if (!item || static_cast<RoomType>(item->data(RoomTypeRole).toInt()) != RoomType::Chatgroup) {
+        return false;
+    }
+    m_client.sendRoomDeleteRequest(RoomDeleteRequestPacket{roomId});
+    return true;
+}
+
+std::optional<RoomRequestPacket> Application::createChatGroupRequest(const QString &groupName, const QList<QUuid> &memberIds) {
+    const QString trimmedName = groupName.trimmed();
+    if (trimmedName.isEmpty() || memberIds.isEmpty()) {
+        return std::nullopt;
+    }
+    return RoomRequestPacket{RoomType::Chatgroup, memberIds, trimmedName};
+}
+
 void Application::initRooms(const LoginSuccessPacket & loginSuccessPacket) {
     //This line keeps the program running forever!!
     //m_roomListModel.appendRow(m_roomListModel.invisibleRootItem());
@@ -51,7 +80,7 @@ void Application::initRooms(const LoginSuccessPacket & loginSuccessPacket) {
     QUuid userId = loginSuccessPacket.userId;
     auto roomInfos = loginSuccessPacket.roomInfos;
     // add the public room to the sidebar
-    addChatGroup(m_publicRoomId, "public");
+    addChatGroup(m_publicRoomId, "public", RoomType::Public);
     createRoom(m_publicRoomId, "public", RoomType::Public);
 
     //add the rest of the rooms
@@ -67,8 +96,14 @@ void Application::initRooms(const LoginSuccessPacket & loginSuccessPacket) {
             //get the userId
             addRoomItem(roomInfo.roomId, roomInfo.userInfos.firstKey() , roomInfo.roomType, roomInfo.userInfos.first());
         }
+        if (roomInfo.roomType == RoomType::Chatgroup) {
+            addChatGroup(roomInfo.roomId, roomInfo.roomName);
+        }
         // create ChatRoom object and add it to the room list
-        createRoom(roomInfo.roomId, roomInfo.userInfos.first().username, roomInfo.roomType);
+        createRoom(roomInfo.roomId,
+            roomInfo.roomType == RoomType::Chatgroup ? roomInfo.roomName : roomInfo.userInfos.first().username,
+            roomInfo.roomType,
+            roomInfo.userInfos);
     }
 
     // add users without rooms
@@ -113,12 +148,78 @@ QStandardItem *Application::disableUser(const LogoutNotificationPacket &logoutNo
     return setUserOnlineStatus(logoutNotificationPacket.userId, false);
 }
 
-void Application::addChatGroup(const QUuid &roomId, const QString &groupName) {
+QStandardItem *Application::addChatGroup(const QUuid &roomId, const QString &groupName, RoomType roomType) {
     QStandardItem* item = new QStandardItem(groupName);
+    item->setData(static_cast<int>(roomType), RoomTypeRole);
     item->setData(roomId, RoomIdRole);
     item->setData(QUuid(), UserIdRole);
-    item->setIcon(QIcon(":/icons/icons/globe.png"));
+    if (roomType == RoomType::Chatgroup) {
+        item->setIcon(QIcon(":/icons/icons/group.png"));
+    }
+    else {
+        item->setIcon(QIcon(":/icons/icons/globe.png"));
+    }
     m_roomListModel.item(0)->appendRow(item);
+    return item;
+}
+
+QStandardItem *Application::addChatGroupFromRoomInfo(const RoomInfo &roomInfo) {
+    if (roomInfo.roomType != RoomType::Chatgroup || roomInfo.roomId.isNull()) {
+        return nullptr;
+    }
+
+    auto *item = addChatGroup(roomInfo.roomId, roomInfo.roomName);
+
+    createRoom(roomInfo.roomId, roomInfo.roomName, roomInfo.roomType, roomInfo.userInfos);
+    return item;
+}
+
+QList<Application::Contact> Application::getContacts() const {
+    QList<Contact> contacts;
+    for (int categoryRow = 1; categoryRow < m_roomListModel.rowCount(); ++categoryRow) {
+        const QStandardItem *categoryItem = m_roomListModel.item(categoryRow);
+        if (!categoryItem) {
+            continue;
+        }
+        for (int itemRow = 0; itemRow < categoryItem->rowCount(); ++itemRow) {
+            const QStandardItem *item = categoryItem->child(itemRow);
+            if (!item) {
+                continue;
+            }
+            const QUuid userId = item->data(UserIdRole).toUuid();
+            if (userId.isNull() || userId == getUserId()) {
+                continue;
+            }
+            contacts.append(Contact{
+                userId,
+                item->text(),
+                !item->data(OfflineRole).toBool()
+            });
+        }
+    }
+    return contacts;
+}
+
+bool Application::removeChatGroup(const QUuid &roomId) {
+    auto *item = getRoomItem(roomId);
+    if (!item || static_cast<RoomType>(item->data(RoomTypeRole).toInt()) != RoomType::Chatgroup) {
+        return false;
+    }
+    if (m_currentRoomId == roomId) {
+        m_currentRoomId = {};
+        m_ChatModel = nullptr;
+    }
+    m_rooms.remove(roomId);
+    item->parent()->removeRow(item->row());
+    emit roomStatusChanged();
+    return true;
+}
+
+QMap<QUuid, UserInfo> Application::getRoomMembers(const QUuid &roomId) const {
+    if (!m_rooms.contains(roomId)) {
+        return {};
+    }
+    return m_rooms[roomId]->getUserInfos();
 }
 
 
@@ -242,8 +343,9 @@ void Application::disconnectFromServer() {
     m_client.disconnectFromHost();
 }
 
-void Application::createRoom(const QUuid &roomId, const QString &roomName, RoomType roomType) {
+void Application::createRoom(const QUuid &roomId, const QString &roomName, RoomType roomType, const QMap<QUuid, UserInfo> &userInfos) {
     auto room = std::make_shared<ChatRoom>(roomId, roomName, roomType, 0, m_chatHistoryManager);
+    room->setUserInfos(userInfos);
     connect(room.get(), &ChatRoom::historySaved, this, &Application::historySaved);
     room->loadHistory();
     m_rooms.insert(roomId,room);
@@ -339,10 +441,3 @@ QStandardItem * Application::getUserItem(const QUuid &userId) {
     qCritical() << Q_FUNC_INFO << "userId" << userId << " is not found!";
     return nullptr;
 }
-
-//
-// void Application::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
-//
-// }
-
-

@@ -77,6 +77,14 @@ public:
         return m_roomType;
     };
 
+    void setUserInfos(QMap<QUuid, UserInfo> userInfos) {
+        m_userInfos = std::move(userInfos);
+    }
+
+    const QMap<QUuid, UserInfo>& getUserInfos() const {
+        return m_userInfos;
+    }
+
     const QList<ChatMessage> getChatMessages() const {
         return m_chatModel.getMessages();
     }
@@ -95,6 +103,7 @@ private:
     QString m_roomName;
     ChatModel m_chatModel;
     uint16_t m_unreadCount = 0;
+    QMap<QUuid, UserInfo> m_userInfos;
 
     std::shared_ptr<ChatHistoryManager> m_chatHistoryManager;
     QTimer m_timer;

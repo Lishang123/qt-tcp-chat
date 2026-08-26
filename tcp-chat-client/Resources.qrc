@@ -2,6 +2,7 @@
     <qresource prefix="/icons">
         <file>icons/mann-avatar.png</file>
         <file>icons/globe.png</file>
+        <file>icons/group.png</file>
     </qresource>
     <qresource prefix="/background">
         <file>background/botanics.png</file>

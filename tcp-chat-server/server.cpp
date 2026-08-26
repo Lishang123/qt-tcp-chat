@@ -170,11 +170,27 @@ void Server::onDataReceived(const QByteArray & data) {
 }
 
 void Server::sendRoomInfo(const QUuid userId, const RoomInfo &roomInfo) {
+    if (!m_clients.contains(userId)) {
+        qInfo() << Q_FUNC_INFO << "client is not connected:" << userId;
+        return;
+    }
     RoomInfoPacket roomInfoPacket{roomInfo};
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     stream << PacketType::RoomAcquired;
     stream << roomInfoPacket;
+    sendData(m_clients[userId], data);
+}
+
+void Server::sendRoomDeleted(const QUuid userId, const RoomDeletedPacket &roomDeletedPacket) {
+    if (!m_clients.contains(userId)) {
+        qInfo() << Q_FUNC_INFO << "client is not connected:" << userId;
+        return;
+    }
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream << PacketType::RoomDeleted;
+    stream << roomDeletedPacket;
     sendData(m_clients[userId], data);
 }
 

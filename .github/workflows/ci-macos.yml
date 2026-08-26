@@ -31,7 +31,7 @@ jobs:
           version: '6.11.0'
           cache: true # reuse the previously installed Qt files for the same Qt version/platform/configuration
 
-      - name: Install clang-tidy
+      - name: Install clang-tidy if not found
         run: |
           if ! command -v clang-tidy >/dev/null 2>&1; then
             brew install llvm

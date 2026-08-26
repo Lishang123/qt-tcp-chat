@@ -16,6 +16,7 @@ public:
     explicit Client(QObject *parent = nullptr);
     void sendLoginRequest(const LoginRequestPacket &loginRequestPacket);
     void sendRoomRequest(const RoomRequestPacket& roomRequestPacket);
+    void sendRoomDeleteRequest(const RoomDeleteRequestPacket& roomDeleteRequestPacket);
     void disconnectFromHost();
 
 signals:
@@ -28,6 +29,7 @@ signals:
     void messageReceived(const ChatMessagePacket& chatMessagePacket);
     void errorOccured(const QString& errorMessage);
     void roomAcquired(const RoomInfoPacket& roomAcquiredPacket);
+    void roomDeleted(const RoomDeletedPacket& roomDeletedPacket);
 
 public slots:
     void connectToServer(const QString& address, quint16 port);
@@ -59,7 +61,7 @@ public:
         m_clientId = clientId;
     }
 
-    QUuid getClientId() {
+    QUuid getClientId() const {
         return m_clientId;
     }
 

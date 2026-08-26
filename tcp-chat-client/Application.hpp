@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QStringListModel>
 #include <QStandardItemModel>
+#include <optional>
 #include "ChatRoom.hpp"
 #include "Client.hpp"
 #include "ChatRoomDelegate.hpp"
@@ -21,6 +22,11 @@ class Application : public QObject{
     };
 
 public:
+    struct Contact {
+        QUuid userId;
+        QString username;
+        bool isOnline;
+    };
 
     enum ExportFormat {
         HTML,
@@ -41,13 +47,27 @@ public:
 
     void sendMessage(const QString& message);
 
+    bool sendChatGroupRequest(const QString &groupName, const QList<QUuid> &memberIds);
+
+    bool sendDeleteGroupRequest(const QUuid &roomId);
+
+    static std::optional<RoomRequestPacket> createChatGroupRequest(const QString &groupName, const QList<QUuid> &memberIds);
+
     void initRooms(const LoginSuccessPacket & loginSuccessPacket);
 
     QStandardItem *addRoomItem(const QUuid &roomId, const QUuid &userId, RoomType type, const UserInfo &userInfo);
 
     QStandardItem *enableUser(const LoginNotificationPacket &logoutNotificationPacket);
 
-    void addChatGroup(const QUuid &roomId, const QString &groupName);
+    QStandardItem *addChatGroup(const QUuid &roomId, const QString &groupName, RoomType roomType = RoomType::Chatgroup);
+
+    QStandardItem *addChatGroupFromRoomInfo(const RoomInfo &roomInfo);
+
+    bool removeChatGroup(const QUuid &roomId);
+
+    QList<Contact> getContacts() const;
+
+    QMap<QUuid, UserInfo> getRoomMembers(const QUuid &roomId) const;
 
     void removeUser(const LogoutNotificationPacket &logoutNotificationPacket);
 
@@ -98,7 +118,7 @@ public:
         m_client.setClientId(userId);
     }
 
-    QUuid getUserId() {
+    QUuid getUserId() const {
         return m_client.getClientId();
     }
 
@@ -123,7 +143,7 @@ public slots:
 
 private:
 
-    void createRoom(const QUuid& roomId, const QString& roomName, RoomType roomType);
+    void createRoom(const QUuid& roomId, const QString& roomName, RoomType roomType, const QMap<QUuid, UserInfo> &userInfos = {});
 
     bool setUnreadBadge(const QUuid &roomId, bool unread);
     void setUnreadBadge(QStandardItem* item, bool unread);

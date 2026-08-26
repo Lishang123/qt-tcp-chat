@@ -38,6 +38,12 @@ void RoomManager::handleMessage(QUuid senderId, const QByteArray &data) {
             handleRoomRequest(senderId, roomRequestPacket);
             break;
         }
+        case PacketType::RoomDeleteRequest: {
+            RoomDeleteRequestPacket roomDeleteRequestPacket;
+            ds >> roomDeleteRequestPacket;
+            handleRoomDeleteRequest(senderId, roomDeleteRequestPacket);
+            break;
+        }
         // case PacketType::LogoutRequest: {
         //     LogoutRequestPacket logoutPacket;
         //     ds >> logoutPacket;
@@ -198,7 +204,7 @@ bool RoomManager::handleChatMessage(QUuid senderId, ChatMessagePacket &packet) {
 }
 
 bool RoomManager::handleRoomRequest(QUuid senderId, RoomRequestPacket &packet) {
-    auto room = createRoom(RoomType::DirectChat, QUuid::createUuid(), packet.roomName, false);
+    auto room = createRoom(packet.roomType, QUuid::createUuid(), packet.roomName, false);
     addRoomMember(room, m_users[senderId], false);// first, add the user who requests it
     //room->addUser(senderId, m_users[senderId]);
     std::ranges::for_each(packet.memberIds, [&](const auto &memberId) {
@@ -206,8 +212,36 @@ bool RoomManager::handleRoomRequest(QUuid senderId, RoomRequestPacket &packet) {
         //room->addUser(memberId, m_users[memberId]);
     });
     auto roomInfo = room->getRoomInfo();
-    roomInfo.userInfos.remove(senderId); // remove the user requesting for convenience.
-    emit roomCreated(senderId, roomInfo);
+    QList<QUuid> notificationTargets{senderId};
+    notificationTargets.append(packet.memberIds);
+    for (const auto &userId : notificationTargets) {
+        RoomInfo userRoomInfo = roomInfo;
+        if (packet.roomType == RoomType::DirectChat) {
+            // remove the user requesting for convenience.
+            userRoomInfo.userInfos.remove(userId);
+        }
+        emit roomCreated(userId, userRoomInfo);
+    }
+    return true;
+}
+
+bool RoomManager::handleRoomDeleteRequest(QUuid senderId, RoomDeleteRequestPacket &packet) {
+    if (!m_rooms.contains(packet.roomId)) {
+        qCritical() << Q_FUNC_INFO << "room not found:" << packet.roomId;
+        return false;
+    }
+    auto room = m_rooms[packet.roomId];
+    if (room->getRoomType() != RoomType::Chatgroup || !room->getRoomUsers().contains(senderId)) {
+        qCritical() << Q_FUNC_INFO << "invalid delete request:" << packet.roomId << senderId;
+        return false;
+    }
+
+    const QList<QUuid> memberIds = room->getRoomUsers().keys();
+    const RoomDeletedPacket roomDeletedPacket{packet.roomId};
+    removeRoom(packet.roomId);
+    for (const auto &memberId : memberIds) {
+        emit roomDeleted(memberId, roomDeletedPacket);
+    }
     return true;
 }
 

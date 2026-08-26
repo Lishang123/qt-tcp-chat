@@ -30,6 +30,7 @@ signals:
     void sendMessageToRoom(ChatRoom& chatRoom, ChatMessagePacket &packet);
     //void userRemoved(QUuid userId);
     void roomCreated(QUuid userId, const RoomInfo& roomInfo);
+    void roomDeleted(QUuid userId, const RoomDeletedPacket& roomDeletedPacket);
     void broadcast(ChatMessagePacket &packet);
 
 public slots:
@@ -42,6 +43,7 @@ private:
     std::shared_ptr<User> findUserByName(QString &username);
     bool handleChatMessage(QUuid senderId, ChatMessagePacket& packet);
     bool handleRoomRequest(QUuid senderId, RoomRequestPacket &packet);
+    bool handleRoomDeleteRequest(QUuid senderId, RoomDeleteRequestPacket &packet);
 
 
     std::map<QUuid, std::shared_ptr<ChatRoom>> m_rooms;

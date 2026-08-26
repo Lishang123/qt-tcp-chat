@@ -114,6 +114,12 @@ void Client::processPacket(const QByteArray &data)
             emit roomAcquired(roomInfoPacket);
             break;
         }
+        case PacketType::RoomDeleted: {
+            RoomDeletedPacket roomDeletedPacket;
+            stream >> roomDeletedPacket;
+            emit roomDeleted(roomDeletedPacket);
+            break;
+        }
         default:
             qCritical() << Q_FUNC_INFO << "\tUnknown packet type:" << packetType;
             break;
@@ -148,6 +154,16 @@ void Client::sendRoomRequest(const RoomRequestPacket &roomRequestPacket) {
     out << roomRequestPacket;
     if (!writePacket(data)) {
         qCritical() << Q_FUNC_INFO << "\tCannot send room request:\t" << data << m_socket.errorString() ;
+    }
+}
+
+void Client::sendRoomDeleteRequest(const RoomDeleteRequestPacket &roomDeleteRequestPacket) {
+    QByteArray data;
+    QDataStream out(&data, QIODevice::WriteOnly);
+    out << PacketType::RoomDeleteRequest;
+    out << roomDeleteRequestPacket;
+    if (!writePacket(data)) {
+        qCritical() << Q_FUNC_INFO << "\tCannot send room delete request:\t" << data << m_socket.errorString() ;
     }
 }
 

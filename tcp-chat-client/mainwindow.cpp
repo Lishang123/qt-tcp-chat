@@ -1,11 +1,19 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "CreateGroupDialog.hpp"
+
+#include <QMenu>
 
 MainWindow::MainWindow(Application *application, QWidget *parent)
     : QMainWindow(parent)
       , ui(new Ui::MainWindow)
       , m_application(application) {
     ui->setupUi(this);
+    ui->groupMemberView->setVisible(false);
+    ui->groupMemberView->setSelectionMode(QAbstractItemView::SelectionMode::NoSelection);
+    ui->groupMemberView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->groupMemberView->setIconSize(QSize(26, 26));
+    ui->groupMemberView->setModel(&m_groupMemberModel);
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
     //ui->chatbox->setWordWrap(true);
     m_chatMessageDelegate = new ChatMessageDelegate(ui->chatbox);
@@ -21,6 +29,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     ui->roomView->setItemDelegate(new ChatRoomDelegate(ui->roomView));
     // get rid of the blue bar when the item is selected
     ui->roomView->setFocusPolicy(Qt::NoFocus);
+    ui->roomView->setContextMenuPolicy(Qt::CustomContextMenu);
 
 
     m_application->setIconSize(ui->roomView->iconSize());
@@ -28,6 +37,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
 
     //connect signals and slots
     connect(ui->textMsg, &QLineEdit::returnPressed, this, &MainWindow::on_btnSend_clicked);
+    connect(ui->roomView, &QWidget::customContextMenuRequested, this, &MainWindow::showRoomViewContextMenu);
 
     connect(m_application, &Application::roomStatusChanged, this, &MainWindow::onRoomStatusChanged);
     connect(m_application, &Application::itemMoved, this, &MainWindow::onItemMoved);
@@ -43,6 +53,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     connect(&m_application->getClient(), &Client::messageReceived, this, &MainWindow::onMessageReceived);
     connect(&m_application->getClient(), &Client::errorOccured, this, &MainWindow::onError);
     connect(&m_application->getClient(), &Client::roomAcquired, this, &MainWindow::onRoomAcquired);
+    connect(&m_application->getClient(), &Client::roomDeleted, this, &MainWindow::onRoomDeleted);
 
 
     //enable buttons
@@ -77,7 +88,6 @@ void MainWindow::on_btnSend_clicked() {
     m_application->sendMessage(ui->textMsg->text());
     ui->textMsg->clear();
 }
-
 
 void MainWindow::removeUser(const LogoutNotificationPacket &logoutNotificationPacket) {
     m_application->removeUser(logoutNotificationPacket);
@@ -235,27 +245,14 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index) {
         return;
     };
     //update the GUI
-    auto roomType = chatRoom->getRoomType();
-    bool showSenderName = (roomType == RoomType::Public || roomType == RoomType::Chatgroup);
-    m_chatMessageDelegate->setShowSender(showSenderName);
-    setChatBoxBg({});
-    // room label, buttons/fields
-    ui->lblChatbox->setText(chatRoom->getRoomName());
-    updateChatRoomLabel(&index);
-    // chat box
-    ui->chatbox->setModel(m_application->getChatModel());
-
-    // debug info
-    auto *sm = ui->roomView->selectionModel();
-    if (sm->hasSelection()) {
-        QModelIndex index = sm->selectedIndexes().first();
-        qDebug() << Q_FUNC_INFO << index.data(UserIdRole).toString();
-    }
+    updateGUIAtSwitch(index, chatRoom);
 }
 
 void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
     qInfo() << Q_FUNC_INFO;
     RoomInfo roomInfo = roomInfoPacket.roomInfo;
+    QModelIndex switchedIndex;
+    std::shared_ptr<ChatRoom> switchedRoom;
     switch (roomInfo.roomType) {
         case RoomType::DirectChat: {
             auto userInfos = roomInfo.userInfos;
@@ -264,27 +261,31 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
                 qCritical() << Q_FUNC_INFO << "Should not happend!";
                 return;
             }
+            switchedIndex = ui->roomView->currentIndex();
+            switchedRoom = m_application->getCurrentRoom();
             break;
         }
         case RoomType::Chatgroup: {
-            qCritical() << Q_FUNC_INFO << "handle chatGroup here!";
+            auto *item = m_application->addChatGroupFromRoomInfo(roomInfo);
+            if (!item) {
+                return;
+            }
+            switchedIndex = item->index();
+            ui->roomView->setCurrentIndex(switchedIndex);
+            switchedRoom = m_application->switchRoom(switchedIndex);
             break;
         }
         case RoomType::Self:
         case RoomType::Public:
         default: {
             qInfo() << Q_FUNC_INFO << "This shouldn't happen!";
+            return;
         }
     }
-    qCritical() << Q_FUNC_INFO << "Setting chat model...";
-    ui->chatbox->setModel(m_application->getChatModel());
-    QModelIndex index = ui->roomView->currentIndex();
-    if (index.isValid()) {
-        QString text = index.data(Qt::DisplayRole).toString();
-        ui->lblChatbox->setText(text);
+
+    if (switchedRoom) {
+        updateGUIAtSwitch(switchedIndex, switchedRoom);
     }
-    ui->btnSend->setEnabled(true);
-    ui->textMsg->setEnabled(true);
     qCritical() << Q_FUNC_INFO << "finished.";
 }
 
@@ -383,3 +384,146 @@ void MainWindow::onHistorySaved() {
     clearStatusbarOnTimer(3000);
 }
 
+bool MainWindow::isGroupsCategoryIndex(const QModelIndex &index) const
+{
+    return index.isValid()
+        && !index.parent().isValid()
+        && index.data(Qt::UserRole).toInt() == 0;
+}
+
+bool MainWindow::isChatGroupIndex(const QModelIndex &index) const
+{
+    return index.isValid()
+        && index.parent().isValid()
+        && static_cast<RoomType>(index.data(RoomTypeRole).toInt()) == RoomType::Chatgroup;
+}
+
+void MainWindow::showRoomViewContextMenu(const QPoint &position)
+{
+    const QModelIndex index = ui->roomView->indexAt(position);
+    QMenu menu(this);
+    if (isGroupsCategoryIndex(index)) {
+        menu.addAction(ui->actionNew_Group);
+    }
+    else if (isChatGroupIndex(index)) {
+        ui->roomView->setCurrentIndex(index);
+        menu.addAction(tr("Show Members"), this, &MainWindow::showSelectedGroupMembers);
+        menu.addAction(ui->actionDelete_Group);
+    }
+    else {
+        return;
+    }
+
+    menu.exec(ui->roomView->viewport()->mapToGlobal(position));
+}
+
+void MainWindow::showSelectedGroupMembers()
+{
+    const QModelIndex index = ui->roomView->currentIndex();
+    if (!isChatGroupIndex(index)) {
+        return;
+    }
+    on_roomView_clicked(index);
+    showGroupMembers(index);
+}
+
+void MainWindow::showGroupMembers(const QModelIndex &index)
+{
+    if (!isChatGroupIndex(index)) {
+        hideGroupMembers();
+        return;
+    }
+
+    m_groupMemberModel.clear();
+    const auto members = m_application->getRoomMembers(index.data(RoomIdRole).toUuid());
+    for (const auto &[_, userInfo] : members.asKeyValueRange()) {
+        auto *item = new QStandardItem(QIcon(":/icons/icons/mann-avatar.png"), userInfo.username);
+        item->setData(!userInfo.isOnline, OfflineRole);
+        m_groupMemberModel.appendRow(item);
+    }
+    ui->groupMemberView->setVisible(true);
+}
+
+void MainWindow::hideGroupMembers()
+{
+    m_groupMemberModel.clear();
+    ui->groupMemberView->setVisible(false);
+}
+
+void MainWindow::on_actionNew_Group_triggered()
+{
+    CreateGroupDialog dialog(m_application->getContacts(), this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+    if (!m_application->sendChatGroupRequest(dialog.groupName(), dialog.selectedUserIds())) {
+        QMessageBox::warning(this, tr("Create Group"), tr("Enter a group name and select at least one contact."));
+    }
+}
+
+
+void MainWindow::on_actionDelete_Group_triggered()
+{
+    const QModelIndex index = ui->roomView->currentIndex();
+    if (!index.isValid() || static_cast<RoomType>(index.data(RoomTypeRole).toInt()) != RoomType::Chatgroup) {
+        QMessageBox::information(this, tr("Delete Group"), tr("Select a group to delete."));
+        return;
+    }
+
+    const QString roomName = index.data(Qt::DisplayRole).toString();
+    const auto result = QMessageBox::question(
+        this,
+        tr("Delete Group"),
+        tr("Delete group \"%1\"?").arg(roomName));
+    if (result != QMessageBox::Yes) {
+        return;
+    }
+
+    if (!m_application->sendDeleteGroupRequest(index.data(RoomIdRole).toUuid())) {
+        QMessageBox::warning(this, tr("Delete Group"), tr("Cannot delete the selected group."));
+    }
+}
+
+void MainWindow::updateGUIAtSwitch(const QModelIndex &index, std::shared_ptr<ChatRoom> chatRoom) {
+    if (!chatRoom) {
+        return;
+    }
+    auto roomType = chatRoom->getRoomType();
+    bool showSenderName = (roomType == RoomType::Public || roomType == RoomType::Chatgroup);
+    m_chatMessageDelegate->setShowSender(showSenderName);
+    if (ui->groupMemberView->isVisible()) {
+        if (roomType == RoomType::Chatgroup) {
+            showGroupMembers(index);
+        }
+        else {
+            hideGroupMembers();
+        }
+    }
+    setChatBoxBg({});
+    // room label, buttons/fields
+    ui->lblChatbox->setText(chatRoom->getRoomName());
+    updateChatRoomLabel(&index);
+    // chat box
+    ui->chatbox->setModel(m_application->getChatModel());
+
+    // debug info
+    auto *sm = ui->roomView->selectionModel();
+    if (sm->hasSelection()) {
+        QModelIndex index = sm->selectedIndexes().first();
+        qDebug() << Q_FUNC_INFO << index.data(UserIdRole).toString();
+    }
+}
+
+void MainWindow::onRoomDeleted(const RoomDeletedPacket &roomDeletedPacket)
+{
+    const bool deletedCurrentRoom = roomDeletedPacket.roomId == m_application->getCurrentRoomId();
+    if (!m_application->removeChatGroup(roomDeletedPacket.roomId)) {
+        return;
+    }
+    if (deletedCurrentRoom) {
+        ui->chatbox->setModel(nullptr);
+        ui->lblChatbox->clear();
+        ui->btnSend->setEnabled(false);
+        ui->textMsg->setEnabled(false);
+    }
+}

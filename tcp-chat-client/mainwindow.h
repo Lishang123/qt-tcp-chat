@@ -54,9 +54,15 @@ private slots:
     void onItemMoved(QStandardItem* item);
     void on_btnExport_clicked();
     void onHistorySaved();
+    void onRoomDeleted(const RoomDeletedPacket& roomDeletedPacket);
+    void showRoomViewContextMenu(const QPoint &position);
+    void showSelectedGroupMembers();
+    void on_actionNew_Group_triggered();
+    void on_actionDelete_Group_triggered();
 
 private:
 
+    void updateGUIAtSwitch(const QModelIndex& index, std::shared_ptr<ChatRoom> chatRoom);
     void addZoomInOut();
     void disableAllBtns();
     void updateChatRoomLabel(const QModelIndex *userIndex);
@@ -67,9 +73,14 @@ private:
     void clearChatBoxBg();
     void setChatBoxBg(const QString& filepath);
     void clearStatusbarOnTimer(size_t seconds);
+    bool isGroupsCategoryIndex(const QModelIndex &index) const;
+    bool isChatGroupIndex(const QModelIndex &index) const;
+    void showGroupMembers(const QModelIndex &index);
+    void hideGroupMembers();
 
     Ui::MainWindow *ui;
     Application* m_application;
     ChatMessageDelegate* m_chatMessageDelegate;
+    QStandardItemModel m_groupMemberModel;
 };
 #endif // MAINWINDOW_H
