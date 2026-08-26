@@ -19,6 +19,9 @@ void ChatRoom::addMessage(const ChatMessagePacket &chatMsg) {
 }
 
 bool ChatRoom::loadHistory() {
+    if (!m_chatHistoryManager) {
+        return false;
+    }
     return m_chatHistoryManager->loadHistory(*this);
 }
 
@@ -39,6 +42,7 @@ bool ChatRoom::exportHistoryPDF(const QString &filepath) {
 }
 
 void ChatRoom::saveHistory() {
+    if (!m_chatHistoryManager) return;
     if (!m_historyModifed) return;
     m_chatHistoryManager->saveHistory(*this);
     emit historySaved();
