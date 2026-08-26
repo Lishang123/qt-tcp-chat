@@ -4,11 +4,16 @@ ChatModel::ChatModel(QObject *parent): QAbstractListModel(parent) {
 }
 
 int ChatModel::rowCount(const QModelIndex &parent) const {
+    if (parent.isValid()) {
+        return 0;
+    }
     return m_items.count();
 }
 
 QVariant ChatModel::data(const QModelIndex &index, int role) const {
     if (!index.isValid())
+        return {};
+    if (index.row() < 0 || index.row() >= m_items.count())
         return {};
     const auto& chatItem = m_items[index.row()];
     if (const auto *msg = std::get_if<ChatMessage>(&chatItem)) {
@@ -49,6 +54,7 @@ QVariant ChatModel::data(const QModelIndex &index, int role) const {
                 return {};
         }
     }
+    return {};
 }
 
 QHash<int, QByteArray> ChatModel::roleNames() const {

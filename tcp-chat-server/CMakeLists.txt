@@ -18,14 +18,14 @@ set(PROJECT_SOURCES
         dialog.ui
         server.h
         server.cpp
-        client.h
-        client.cpp
+        Client.h
+        Client.cpp
         DatabaseManager.hpp
         DatabaseManager.cpp
         RoomManager.cpp
         RoomManager.hpp
-        chatRoom.hpp
-        chatRoom.cpp
+        ChatRoom.hpp
+        ChatRoom.cpp
         Application.hpp
         Application.cpp
 )
