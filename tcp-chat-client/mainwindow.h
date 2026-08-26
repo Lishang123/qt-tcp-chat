@@ -56,9 +56,12 @@ private slots:
     void onHistorySaved();
     void onRoomDeleted(const RoomDeletedPacket& roomDeletedPacket);
     void showRoomViewContextMenu(const QPoint &position);
+    void showGroupMemberViewContextMenu(const QPoint &position);
     void showSelectedGroupMembers();
     void on_actionNew_Group_triggered();
     void on_actionDelete_Group_triggered();
+
+    void on_groupMemberView_doubleClicked(const QModelIndex &index);
 
 private:
 
@@ -77,6 +80,7 @@ private:
     bool isChatGroupIndex(const QModelIndex &index) const;
     void showGroupMembers(const QModelIndex &index);
     void hideGroupMembers();
+    void updateGroupMemberOnlineStatus(const QUuid &userId, bool online);
 
     Ui::MainWindow *ui;
     Application* m_application;

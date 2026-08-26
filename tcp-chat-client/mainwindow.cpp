@@ -10,10 +10,13 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
       , m_application(application) {
     ui->setupUi(this);
     ui->groupMemberView->setVisible(false);
-    ui->groupMemberView->setSelectionMode(QAbstractItemView::SelectionMode::NoSelection);
+    ui->groupMemberView->setFocusPolicy(Qt::NoFocus);
     ui->groupMemberView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->groupMemberView->setIconSize(QSize(26, 26));
     ui->groupMemberView->setModel(&m_groupMemberModel);
+    ui->groupMemberView->setItemDelegate(new ChatRoomDelegate(ui->groupMemberView));
+    ui->groupMemberView->setContextMenuPolicy(Qt::CustomContextMenu);
+
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
     //ui->chatbox->setWordWrap(true);
     m_chatMessageDelegate = new ChatMessageDelegate(ui->chatbox);
@@ -38,6 +41,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     //connect signals and slots
     connect(ui->textMsg, &QLineEdit::returnPressed, this, &MainWindow::on_btnSend_clicked);
     connect(ui->roomView, &QWidget::customContextMenuRequested, this, &MainWindow::showRoomViewContextMenu);
+    connect(ui->groupMemberView, &QWidget::customContextMenuRequested, this, &MainWindow::showGroupMemberViewContextMenu);
 
     connect(m_application, &Application::roomStatusChanged, this, &MainWindow::onRoomStatusChanged);
     connect(m_application, &Application::itemMoved, this, &MainWindow::onItemMoved);
@@ -106,6 +110,7 @@ void MainWindow::enableUser(const LoginNotificationPacket &loginNotificationPack
         }
     }
     auto userItem = m_application->enableUser(loginNotificationPacket);
+    updateGroupMemberOnlineStatus(loginNotificationPacket.userId, true);
     if (keepSelection && userItem) {
         auto index = userItem->index();
         updateChatRoomLabel(&index);
@@ -127,6 +132,7 @@ void MainWindow::disableUser(const LogoutNotificationPacket &logoutNotificationP
         }
     }
     auto userItem = m_application->disableUser(logoutNotificationPacket);
+    updateGroupMemberOnlineStatus(logoutNotificationPacket.userId, false);
     if (keepSelection && userItem) {
         auto index = userItem->index();
         updateChatRoomLabel(&index);
@@ -398,6 +404,63 @@ bool MainWindow::isChatGroupIndex(const QModelIndex &index) const
         && static_cast<RoomType>(index.data(RoomTypeRole).toInt()) == RoomType::Chatgroup;
 }
 
+void MainWindow::updateGroupMemberOnlineStatus(const QUuid &userId, bool online)
+{
+    for (int row = 0; row < m_groupMemberModel.rowCount(); ++row) {
+        QStandardItem *item = m_groupMemberModel.item(row);
+        if (!item || item->data(UserIdRole).toUuid() != userId) {
+            continue;
+        }
+
+        const QString offlineSuffix = tr(" [Offline]");
+        QString username = item->text();
+        if (username.endsWith(offlineSuffix)) {
+            username.chop(offlineSuffix.size());
+        }
+
+        item->setText(online ? username : username + offlineSuffix);
+        item->setData(!online, OfflineRole);
+        ui->groupMemberView->viewport()->update();
+        return;
+    }
+}
+
+
+void MainWindow::on_groupMemberView_doubleClicked(const QModelIndex &index)
+{
+    if (!index.isValid()) {
+        return;
+    }
+
+    const QUuid userId = index.data(UserIdRole).toUuid();
+    if (userId.isNull()) {
+        qCritical() << Q_FUNC_INFO << "group member item has no user id";
+        return;
+    }
+    auto userItem = m_application->getUserItem(userId);
+    if (userItem) {
+        auto chatRoom = m_application->switchRoom(userItem->index());
+        if (chatRoom) {
+            updateGUIAtSwitch(userItem->index(), chatRoom);
+        }
+        return;
+    }
+    qCritical() << Q_FUNC_INFO << "user item not found:" << userId;
+}
+
+void MainWindow::showGroupMemberViewContextMenu(const QPoint &position) {
+    const QModelIndex index = ui->groupMemberView->indexAt(position);
+    if (!index.isValid()) {
+        return;
+    }
+
+    QMenu menu(this);
+    menu.addAction(tr("Direct Message"), this, [this, index]() {
+        on_groupMemberView_doubleClicked(index);
+    });
+    menu.exec(ui->groupMemberView->viewport()->mapToGlobal(position));
+}
+
 void MainWindow::showRoomViewContextMenu(const QPoint &position)
 {
     const QModelIndex index = ui->roomView->indexAt(position);
@@ -436,8 +499,13 @@ void MainWindow::showGroupMembers(const QModelIndex &index)
 
     m_groupMemberModel.clear();
     const auto members = m_application->getRoomMembers(index.data(RoomIdRole).toUuid());
-    for (const auto &[_, userInfo] : members.asKeyValueRange()) {
-        auto *item = new QStandardItem(QIcon(":/icons/icons/mann-avatar.png"), userInfo.username);
+    for (const auto &[userId, userInfo] : members.asKeyValueRange()) {
+        QString text = userInfo.username;
+        if (!userInfo.isOnline) {
+            text += tr(" [Offline]");
+        }
+        auto *item = new QStandardItem(QIcon(":/icons/icons/mann-avatar.png"), text);
+        item->setData(userId, UserIdRole);
         item->setData(!userInfo.isOnline, OfflineRole);
         m_groupMemberModel.appendRow(item);
     }

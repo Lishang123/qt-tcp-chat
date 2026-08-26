@@ -369,6 +369,10 @@ void Application::setUnreadBadge(QStandardItem *item, bool unread) {
 }
 
 QStandardItem *Application::setUserOnlineStatus(const QUuid &userId, bool online) {
+    for (const auto &room : m_rooms) {
+        room->setUserOnlineStatus(userId, online);
+    }
+
     auto userItem = getUserItem(userId);
     if (userItem) {
         if (online) {
