@@ -5,7 +5,7 @@
 #include <qobject.h>
 #include "../common/Packet.hpp"
 #include "../common/ChatMessagePacket.hpp"
-#include "client.h"
+#include "Client.h"
 
 struct User {
     User(const QUuid &user_id, const QString &username)
