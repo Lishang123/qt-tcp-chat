@@ -496,6 +496,7 @@ void MainWindow::on_groupMemberView_doubleClicked(const QModelIndex &index)
     }
     auto userItem = m_application->getUserItem(userId);
     if (userItem) {
+        ui->roomView->setCurrentIndex(userItem->index());
         auto chatRoom = m_application->switchRoom(userItem->index());
         if (chatRoom) {
             updateGUIAtSwitch(userItem->index(), chatRoom);
