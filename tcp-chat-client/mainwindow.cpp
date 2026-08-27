@@ -281,6 +281,7 @@ void MainWindow::addGroupCategoryButton()
         " border-radius: %1px;"
         " background: #f4f4f4;"
         " font-weight: bold;"
+        " padding-bottom: 1px;"
         "}"
         "QToolButton:hover {"
         " background: #e8e8e8;"
