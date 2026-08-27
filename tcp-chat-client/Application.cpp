@@ -278,7 +278,7 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
     }
     auto parent = roomItem->parent();
     //TODO: really need a QAbstractItemModel for moving rows (considering pinned rooms).
-    parent->insertRow(1, parent->takeRow(roomItem->row()));
+    parent->insertRow(qMin(1, parent->rowCount() - 1), parent->takeRow(roomItem->row()));
 }
 
 std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
