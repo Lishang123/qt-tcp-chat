@@ -24,14 +24,18 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     //ui->chatbox->setWordWrap(true);
     m_chatMessageDelegate = new ChatMessageDelegate(ui->chatbox);
     ui->chatbox->setItemDelegate(m_chatMessageDelegate);
-    clearChatBoxBg();
+    clearChatBoxBg(); // don't display background at the beginning
 
     ui->roomView->setHeaderHidden(true);
+    // No editing possible.
     ui->roomView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->roomView->setIconSize(QSize(26, 26));
+    ui->roomView->setIconSize(QSize(26, 26)); // make icons larger
+
+    // set font size of text
     auto font = ui->roomView->font();
     font.setPointSize(16);
     ui->roomView->setFont(font);
+
     ui->roomView->setItemDelegate(new ChatRoomDelegate(ui->roomView));
     // get rid of the blue bar when the item is selected
     ui->roomView->setFocusPolicy(Qt::NoFocus);
@@ -286,9 +290,6 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index) {
     qInfo() << Q_FUNC_INFO << ", index : " << index << "clicked";
     auto chatRoom = m_application->switchRoom(index);
     if (!chatRoom) {
-        //clearChatBoxBg();
-        //ui->btnSend->setEnabled(false);
-        //ui->textMsg->setEnabled(false);
         return;
     };
     //update the GUI
@@ -609,7 +610,7 @@ void MainWindow::updateGUIAtSwitch(const QModelIndex &index, std::shared_ptr<Cha
         }
     }
     setChatBoxBg({});
-    // room label, buttons/fields
+    // update room label, buttons/fields
     ui->lblChatbox->setText(chatRoom->getRoomName());
     updateChatRoomLabel(&index);
     // chat box
