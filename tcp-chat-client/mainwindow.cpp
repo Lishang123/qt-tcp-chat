@@ -12,7 +12,8 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
       , ui(new Ui::MainWindow)
       , m_application(application) {
     ui->setupUi(this);
-    ui->groupMemberView->setVisible(false);
+    ui->gbxGroupMembers->setVisible(false);
+    ui->gbxGroupMembers->layout()->setContentsMargins(0, 0, 0, 0);
     ui->groupMemberView->setFocusPolicy(Qt::NoFocus);
     ui->groupMemberView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->groupMemberView->setIconSize(QSize(26, 26));
@@ -558,13 +559,13 @@ void MainWindow::showGroupMembers(const QModelIndex &index)
         item->setData(!userInfo.isOnline, OfflineRole);
         m_groupMemberModel.appendRow(item);
     }
-    ui->groupMemberView->setVisible(true);
+    ui->gbxGroupMembers->setVisible(true);
 }
 
 void MainWindow::hideGroupMembers()
 {
     m_groupMemberModel.clear();
-    ui->groupMemberView->setVisible(false);
+    ui->gbxGroupMembers->setVisible(false);
 }
 
 void MainWindow::on_actionNew_Group_triggered()
