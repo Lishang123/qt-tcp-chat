@@ -22,6 +22,13 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     ui->groupMemberView->setContextMenuPolicy(Qt::CustomContextMenu);
 
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    // tells the view to relayout items when the view size changes.
+    // => automatically adjust the position of the bubbles when resize.
+    // either one of the two works
+    // ui->chatbox->setResizeMode(QListView::Adjust);
+    ui->chatbox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
     //ui->chatbox->setWordWrap(true);
     m_chatMessageDelegate = new ChatMessageDelegate(ui->chatbox);
     ui->chatbox->setItemDelegate(m_chatMessageDelegate);
