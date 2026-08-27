@@ -76,6 +76,7 @@ private:
     void clearChatBoxBg();
     void setChatBoxBg(const QString& filepath);
     void clearStatusbarOnTimer(size_t seconds);
+    void addGroupCategoryButton();
     bool isGroupsCategoryIndex(const QModelIndex &index) const;
     bool isChatGroupIndex(const QModelIndex &index) const;
     void showGroupMembers(const QModelIndex &index);

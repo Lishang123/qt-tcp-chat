@@ -2,7 +2,10 @@
 #include "./ui_mainwindow.h"
 #include "CreateGroupDialog.hpp"
 
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QMenu>
+#include <QToolButton>
 
 MainWindow::MainWindow(Application *application, QWidget *parent)
     : QMainWindow(parent)
@@ -67,6 +70,7 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     //ui->chatbox->setModel(&m_application->getChatModel());
     addZoomInOut();
     ui->roomView->setModel(&m_application->getRoomListModel());
+    addGroupCategoryButton();
     ui->roomView->expandAll();
 
     QString username = m_application->getClient().getUserName();
@@ -239,6 +243,43 @@ void MainWindow::clearStatusbarOnTimer(size_t seconds) {
     QTimer::singleShot(seconds, [this]() {
            ui->statusbar->clearMessage();
         });
+}
+
+void MainWindow::addGroupCategoryButton()
+{
+    const QModelIndex groupsIndex = m_application->getRoomListModel().index(0,0);
+    if (!groupsIndex.isValid()) {
+        return;
+    }
+
+    auto *container = new QWidget(ui->roomView);
+    auto *layout = new QHBoxLayout(container);
+    // don't remove this line so that QHBoxLayout doesn't fall back to its default margins.
+    layout->setContentsMargins(0, 4, 4, 0);
+
+    auto *button = new QToolButton(container);
+    constexpr int buttonSize = 16;
+    button->setText("+");
+    button->setToolTip(tr("New Group"));
+    button->setFixedSize(buttonSize, buttonSize);
+    button->setAutoRaise(false);
+    button->setStyleSheet(QString(
+        "QToolButton {"
+        " border: 1px solid #999;"
+        " border-radius: %1px;"
+        " background: #f4f4f4;"
+        " font-weight: bold;"
+        "}"
+        "QToolButton:hover {"
+        " background: #e8e8e8;"
+        "}"
+    ).arg(buttonSize / 2)); // the radius should always be half of the size
+
+    layout->addStretch();
+    layout->addWidget(button);
+
+    ui->roomView->setIndexWidget(groupsIndex, container);
+    connect(button, &QToolButton::clicked, ui->actionNew_Group, &QAction::trigger);
 }
 
 void MainWindow::on_roomView_clicked(const QModelIndex &index) {
