@@ -299,14 +299,18 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index) {
 void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
     qInfo() << Q_FUNC_INFO;
     RoomInfo roomInfo = roomInfoPacket.roomInfo;
+    const bool createdByCurrentUser = roomInfo.creatorId == m_application->getUserId();
     QModelIndex switchedIndex;
     std::shared_ptr<ChatRoom> switchedRoom;
     switch (roomInfo.roomType) {
         case RoomType::DirectChat: {
             auto userInfos = roomInfo.userInfos;
             assert(userInfos.count() == 1);
-            if (!m_application->setRoomIdOnUser(roomInfo.roomId, userInfos.firstKey(), true)) {
+            if (!m_application->setRoomIdOnUser(roomInfo.roomId, userInfos.firstKey(), createdByCurrentUser)) {
                 qCritical() << Q_FUNC_INFO << "Should not happend!";
+                return;
+            }
+            if (!createdByCurrentUser) {
                 return;
             }
             switchedIndex = ui->roomView->currentIndex();
@@ -316,6 +320,9 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
         case RoomType::Chatgroup: {
             auto *item = m_application->addChatGroupFromRoomInfo(roomInfo);
             if (!item) {
+                return;
+            }
+            if (!createdByCurrentUser) {
                 return;
             }
             switchedIndex = item->index();
