@@ -22,7 +22,7 @@ public:
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 private:
     void paintUnreadBadge(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-    void paintGreyScale(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    //void paintGreyScale(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
 

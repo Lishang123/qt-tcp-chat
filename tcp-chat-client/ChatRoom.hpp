@@ -85,6 +85,14 @@ public:
         return m_userInfos;
     }
 
+    bool setUserOnlineStatus(const QUuid &userId, bool online) {
+        if (!m_userInfos.contains(userId)) {
+            return false;
+        }
+        m_userInfos[userId].isOnline = online;
+        return true;
+    }
+
     const QList<ChatMessage> getChatMessages() const {
         return m_chatModel.getMessages();
     }

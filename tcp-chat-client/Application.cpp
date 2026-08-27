@@ -234,15 +234,21 @@ void Application::removeUser(const LogoutNotificationPacket &logoutNotificationP
 
 bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool switchRoomLater) {
     qInfo() << Q_FUNC_INFO;
-    auto userCategoryItem = m_roomListModel.item(1);
-    for (int row = 0; row < userCategoryItem->rowCount(); ++row) {
-        auto item = userCategoryItem->child(row);
-        if (item->data(UserIdRole) == userId) {
-            item->setData(roomId, RoomIdRole);
-            if (switchRoomLater)
-                return switchRoom(item->index()) != nullptr;
-            setUnreadBadge(item, true);
-            return true;
+    for (int categoryRow = Online; categoryRow <= Offline; ++categoryRow) {
+        auto userCategoryItem = m_roomListModel.item(categoryRow);
+        if (!userCategoryItem) {
+            continue;
+        }
+
+        for (int row = 0; row < userCategoryItem->rowCount(); ++row) {
+            auto item = userCategoryItem->child(row);
+            if (item->data(UserIdRole) == userId) {
+                item->setData(roomId, RoomIdRole);
+                if (switchRoomLater)
+                    return switchRoom(item->index()) != nullptr;
+                setUnreadBadge(item, true);
+                return true;
+            }
         }
     }
     return false;
@@ -369,6 +375,10 @@ void Application::setUnreadBadge(QStandardItem *item, bool unread) {
 }
 
 QStandardItem *Application::setUserOnlineStatus(const QUuid &userId, bool online) {
+    for (const auto &room : m_rooms) {
+        room->setUserOnlineStatus(userId, online);
+    }
+
     auto userItem = getUserItem(userId);
     if (userItem) {
         if (online) {

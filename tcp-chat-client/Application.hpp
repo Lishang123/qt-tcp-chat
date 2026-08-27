@@ -131,6 +131,7 @@ public:
     }
 
     bool exportHistory(const QString &fileName, ExportFormat format);
+    QStandardItem * getUserItem(const QUuid &userId);
 
 signals:
     // void roomSwitched(const QModelIndex &index, ChatRoom &chatRoom);
@@ -152,7 +153,6 @@ private:
     void moveUserToGroup(QStandardItem* userItem, CategoryType ctype);
 
     QStandardItem* getRoomItem(const QUuid &roomId);
-    QStandardItem * getUserItem(const QUuid &userId);
 
     Client m_client;
     //QStringList m_list;
@@ -161,7 +161,7 @@ private:
     QUuid m_publicRoomId;
     QUuid m_currentRoomId;
 
-    QMap<QUuid, std::shared_ptr<UserInfo>> m_userInfo;
+    // QMap<QUuid, std::shared_ptr<UserInfo>> m_userInfo;
 
     QMap<QUuid, std::shared_ptr<ChatRoom>> m_rooms;
     QStandardItemModel m_roomListModel;
