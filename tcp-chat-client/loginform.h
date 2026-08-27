@@ -25,7 +25,7 @@ private slots:
     void onError(const QString &errorMessage);
 
 private:
-    void requestLoginInfo();
+    bool requestLoginInfo();
 
     Ui::LoginForm *ui;
     Application *m_application;

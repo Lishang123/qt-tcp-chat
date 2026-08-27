@@ -23,7 +23,9 @@ LoginForm::~LoginForm()
 
 void LoginForm::onClientConnected() {
     qInfo() << Q_FUNC_INFO;
-    requestLoginInfo();
+    if (!requestLoginInfo()) {
+        ui->btnConnect->setDisabled(false);
+    }
 }
 
 void LoginForm::onClientLoggedIn(const LoginSuccessPacket &loginSuccessPacket) {
@@ -58,22 +60,26 @@ void LoginForm::onError(const QString &errorMessage) {
     QMessageBox::critical(this, "Error", errorMessage);
 }
 
-void LoginForm::requestLoginInfo() {
+bool LoginForm::requestLoginInfo() {
     qInfo() << Q_FUNC_INFO;
     while (true) {
+        bool ok{};
         QString username = QInputDialog::getText(
             this, //parent widget
         "Name", //title
         "What is your name?",//label text inside the dialog
         QLineEdit::EchoMode::Normal, //show typed text normally
-        m_application->getClient().getUserName() // The pre-filled text inside the input field.
-        );
+        m_application->getClient().getUserName(), // The pre-filled text inside the input field.
+        &ok);
+        if (!ok)
+            return false;
         qInfo() << "username: " << username;
         if (username.isEmpty()){
             QMessageBox::critical(this, "Error", "Please enter a valid name!");
             continue;
         }
-        return m_application->sendLoginRequest(LoginRequestPacket{username, 0, "password"});
+        m_application->sendLoginRequest(LoginRequestPacket{username, 0, "password"});
+        return true;
     }
 }
 
