@@ -16,6 +16,7 @@ QSize ChatMessageDelegate::sizeHint(const QStyleOptionViewItem &option, const QM
     {
         QFont font = option.font;
         font.setPointSizeF(font.pointSizeF() * 0.9f);
+        font.setBold(true);
         QFontMetrics fm(font);
         return QSize(option.rect.width(), fm.height() + 2* dateItemPadding);
     }
@@ -140,6 +141,7 @@ void ChatMessageDelegate::drawDateSeparator(QPainter *painter, const QStyleOptio
     //qInfo() << Q_FUNC_INFO << "date: " << date;
     QFont dateFont = option.font;
     dateFont.setPointSizeF(dateFont.pointSizeF() * 0.9f);
+    dateFont.setBold(true);
     QFontMetrics timeFm(dateFont);
     QSize dateSize = timeFm.size(Qt::TextSingleLine, date);
 
@@ -151,7 +153,9 @@ void ChatMessageDelegate::drawDateSeparator(QPainter *painter, const QStyleOptio
 
     painter->save();
     painter->setBrush(Qt::transparent);
-    painter->setPen(Qt::lightGray);
+    QPen borderPen(Qt::lightGray);
+    borderPen.setWidth(2); // make the border thicker!
+    painter->setPen(borderPen);
     painter->drawRoundedRect(dateRect, 10, 10);
     painter->restore();
 
@@ -160,6 +164,7 @@ void ChatMessageDelegate::drawDateSeparator(QPainter *painter, const QStyleOptio
             dateRect.left() +  0.5f * padding ,
             dateRect.bottom() - 0.5f * padding);
     painter->save();
+    painter->setFont(dateFont);
     painter->setPen(Qt::darkGray);
     painter->drawText( datePos ,date);
     painter->restore();
@@ -197,6 +202,7 @@ ChatMessageDelegate::BubbleLayout ChatMessageDelegate::calculateBubbleLayout(con
     QString message = index.data(ChatModel::MsgRole).toString();
 
     res.messageFont = option.font;
+    //res.messageFont.setBold(true);
     QTextDocument doc;
     doc.setDocumentMargin(0);
     doc.setDefaultFont(res.messageFont);
