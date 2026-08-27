@@ -246,7 +246,6 @@ bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool
                 item->setData(roomId, RoomIdRole);
                 if (switchRoomLater)
                     return switchRoom(item->index()) != nullptr;
-                setUnreadBadge(item, true);
                 return true;
             }
         }
