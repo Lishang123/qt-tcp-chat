@@ -267,6 +267,7 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
         //all received message without room should be from a friend: aka type direct chat
         createRoom(targetRoomId, roomName, RoomType::DirectChat);
     }
+    //unread badges are only set here!
     addChatMessage(targetRoomId, chatMessagePacket);
 
     // move room upward under user
