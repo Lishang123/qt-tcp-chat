@@ -4,12 +4,21 @@
 #include "../common/ChatMessagePacket.hpp"
 
 
+/**
+ * @brief Marker item used to separate messages from different dates.
+ */
 struct DateSeparator {
     QDate date;
 };
 
+/**
+ * @brief Marker item inserted before unread messages.
+ */
 struct UnreadSeparator {};
 
+/**
+ * @brief Serialized discriminator for ChatItem variants.
+ */
 enum ChatItemType {
     Message,
     DateSep,
@@ -17,6 +26,9 @@ enum ChatItemType {
 };
 using ChatItem = std::variant<ChatMessage, DateSeparator, UnreadSeparator>;
 
+/**
+ * @brief Serializes a chat model item variant.
+ */
 inline QDataStream &operator<<(QDataStream &out, const ChatItem &item)
 {
     if (const auto *msg = std::get_if<ChatMessage>(&item))
@@ -36,6 +48,9 @@ inline QDataStream &operator<<(QDataStream &out, const ChatItem &item)
     return out;
 }
 
+/**
+ * @brief Deserializes a chat model item variant.
+ */
 inline QDataStream &operator>>(QDataStream &in, ChatItem &item)
 {
     ChatItemType type;
@@ -67,11 +82,17 @@ inline QDataStream &operator>>(QDataStream &in, ChatItem &item)
 }
 
 
+/**
+ * @brief List model that exposes chat messages and separator rows to Qt views.
+ */
 class ChatModel : public QAbstractListModel {
     Q_OBJECT
 
 public:
 
+    /**
+     * @brief Custom Qt roles consumed by chat delegates.
+     */
     enum Roles
     {
         ItemTypeRole = Qt::UserRole + 1, // sender name
@@ -82,18 +103,39 @@ public:
         OutGoingRole,
     };
 
+    /**
+     * @brief Constructs an empty chat model.
+     */
     explicit ChatModel(QObject *parent = nullptr);
 
+    /**
+     * @brief Returns the number of chat items in the model.
+     */
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 
+    /**
+     * @brief Returns display data for the requested index and role.
+     */
     QVariant data(const QModelIndex &index, int role) const override;
 
+    /**
+     * @brief Returns role names for Qt model consumers.
+     */
     QHash<int, QByteArray> roleNames() const override;
 
+    /**
+     * @brief Appends a message and inserts date separators when needed.
+     */
     void addMessage(const ChatMessagePacket &chatMsg);
 
+    /**
+     * @brief Returns the item at the given row.
+     */
     const ChatItem& getChatItem(int row);
 
+    /**
+     * @brief Returns only chat messages, excluding separator items.
+     */
     const QList<ChatMessage> getMessages() const {
         QList<ChatMessage> chatMessages;
         foreach (const ChatItem& chatItem, m_items) {
@@ -104,15 +146,32 @@ public:
         return chatMessages;
     }
 
+    /**
+     * @brief Returns all model items, including separators.
+     */
     const QList<ChatItem>& getChatItems() const {
         return m_items;
     }
 
+    /**
+     * @brief Replaces all chat model items.
+     */
     void setChatItems(QList<ChatItem> messages);
 
 private:
+    /**
+     * @brief Appends a date separator if the given date differs from the last message.
+     */
     void appendDateSeparatorIfNeeded(QDateTime date);
+
+    /**
+     * @brief Appends a date separator for the given date.
+     */
     void appendDateSeparator(QDateTime date);
+
+    /**
+     * @brief Returns the last message item if one exists.
+     */
     std::optional<ChatMessage> getLastMessage();
     QList<ChatItem> m_items;
 };

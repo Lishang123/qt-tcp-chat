@@ -356,7 +356,6 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
 void MainWindow::onRoomStatusChanged() {
     qInfo() << Q_FUNC_INFO;
     ui->roomView->viewport()->update();
-    qInfo() << Q_FUNC_INFO << "finished";
 }
 
 void MainWindow::onItemMoved(QStandardItem *item) {
