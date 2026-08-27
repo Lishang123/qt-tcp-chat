@@ -12,7 +12,8 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
       , ui(new Ui::MainWindow)
       , m_application(application) {
     ui->setupUi(this);
-    ui->groupMemberView->setVisible(false);
+    ui->gbxGroupMembers->setVisible(false);
+    ui->gbxGroupMembers->layout()->setContentsMargins(0, 0, 0, 0);
     ui->groupMemberView->setFocusPolicy(Qt::NoFocus);
     ui->groupMemberView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->groupMemberView->setIconSize(QSize(26, 26));
@@ -21,6 +22,13 @@ MainWindow::MainWindow(Application *application, QWidget *parent)
     ui->groupMemberView->setContextMenuPolicy(Qt::CustomContextMenu);
 
     ui->chatbox->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    // tells the view to relayout items when the view size changes.
+    // => automatically adjust the position of the bubbles when resize.
+    // either one of the two works
+    // ui->chatbox->setResizeMode(QListView::Adjust);
+    ui->chatbox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
     //ui->chatbox->setWordWrap(true);
     m_chatMessageDelegate = new ChatMessageDelegate(ui->chatbox);
     ui->chatbox->setItemDelegate(m_chatMessageDelegate);
@@ -299,14 +307,18 @@ void MainWindow::on_roomView_clicked(const QModelIndex &index) {
 void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
     qInfo() << Q_FUNC_INFO;
     RoomInfo roomInfo = roomInfoPacket.roomInfo;
+    const bool createdByCurrentUser = roomInfo.creatorId == m_application->getUserId();
     QModelIndex switchedIndex;
     std::shared_ptr<ChatRoom> switchedRoom;
     switch (roomInfo.roomType) {
         case RoomType::DirectChat: {
             auto userInfos = roomInfo.userInfos;
             assert(userInfos.count() == 1);
-            if (!m_application->setRoomIdOnUser(roomInfo.roomId, userInfos.firstKey(), true)) {
+            if (!m_application->setRoomIdOnUser(roomInfo.roomId, userInfos.firstKey(), createdByCurrentUser)) {
                 qCritical() << Q_FUNC_INFO << "Should not happend!";
+                return;
+            }
+            if (!createdByCurrentUser) {
                 return;
             }
             switchedIndex = ui->roomView->currentIndex();
@@ -316,6 +328,9 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
         case RoomType::Chatgroup: {
             auto *item = m_application->addChatGroupFromRoomInfo(roomInfo);
             if (!item) {
+                return;
+            }
+            if (!createdByCurrentUser) {
                 return;
             }
             switchedIndex = item->index();
@@ -481,6 +496,7 @@ void MainWindow::on_groupMemberView_doubleClicked(const QModelIndex &index)
     }
     auto userItem = m_application->getUserItem(userId);
     if (userItem) {
+        ui->roomView->setCurrentIndex(userItem->index());
         auto chatRoom = m_application->switchRoom(userItem->index());
         if (chatRoom) {
             updateGUIAtSwitch(userItem->index(), chatRoom);
@@ -551,13 +567,13 @@ void MainWindow::showGroupMembers(const QModelIndex &index)
         item->setData(!userInfo.isOnline, OfflineRole);
         m_groupMemberModel.appendRow(item);
     }
-    ui->groupMemberView->setVisible(true);
+    ui->gbxGroupMembers->setVisible(true);
 }
 
 void MainWindow::hideGroupMembers()
 {
     m_groupMemberModel.clear();
-    ui->groupMemberView->setVisible(false);
+    ui->gbxGroupMembers->setVisible(false);
 }
 
 void MainWindow::on_actionNew_Group_triggered()

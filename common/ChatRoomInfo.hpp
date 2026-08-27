@@ -32,17 +32,18 @@ struct RoomInfo {
     QUuid roomId;
     QString roomName;
     QMap<QUuid,UserInfo> userInfos;
+    QUuid creatorId;
     // uint16_t unreadCount;
     // QList<QString> usernames;
 };
 
 inline QDataStream& operator<<(QDataStream& stream, const RoomInfo& roomInfo) {
-    stream  << roomInfo.roomType << roomInfo.roomId << roomInfo.roomName << roomInfo.userInfos; // << roomInfo.usernames;
+    stream  << roomInfo.roomType << roomInfo.roomId << roomInfo.roomName << roomInfo.userInfos << roomInfo.creatorId; // << roomInfo.usernames;
     return stream;
 }
 
 inline QDataStream& operator>>(QDataStream& stream, RoomInfo& roomInfo) {
-    stream >> roomInfo.roomType  >> roomInfo.roomId >> roomInfo.roomName >> roomInfo.userInfos; // >> roomInfo.usernames;
+    stream >> roomInfo.roomType  >> roomInfo.roomId >> roomInfo.roomName >> roomInfo.userInfos >> roomInfo.creatorId; // >> roomInfo.usernames;
     return stream;
 }
 

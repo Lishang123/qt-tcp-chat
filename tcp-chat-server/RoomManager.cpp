@@ -212,6 +212,7 @@ bool RoomManager::handleRoomRequest(QUuid senderId, RoomRequestPacket &packet) {
         //room->addUser(memberId, m_users[memberId]);
     });
     auto roomInfo = room->getRoomInfo();
+    roomInfo.creatorId = senderId;
     QList<QUuid> notificationTargets{senderId};
     notificationTargets.append(packet.memberIds);
     for (const auto &userId : notificationTargets) {
