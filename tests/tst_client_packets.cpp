@@ -12,6 +12,7 @@ private slots:
     void notifyLogoutEmitsPacket();
     void chatMessageEmitsPacket();
     void roomAcquiredEmitsPacket();
+    void roomDeletedEmitsPacket();
 
 private:
     template <typename Packet>
@@ -131,6 +132,7 @@ void ClientPacketTest::chatMessageEmitsPacket()
     Client client;
     ChatMessagePacket emittedPacket;
     int emitCount = 0;
+    //QSignalSpy could work here too
     connect(&client, &Client::messageReceived, this, [&](const ChatMessagePacket &packet) {
         emittedPacket = packet;
         ++emitCount;
@@ -170,6 +172,7 @@ void ClientPacketTest::roomAcquiredEmitsPacket()
     packet.roomInfo.roomType = RoomType::Chatgroup;
     packet.roomInfo.roomId = QUuid::createUuid();
     packet.roomInfo.roomName = "Project";
+    packet.roomInfo.creatorId = QUuid::createUuid();
     packet.roomInfo.userInfos.insert(QUuid::createUuid(), UserInfo{ "erin", true });
     packet.roomInfo.userInfos.insert(QUuid::createUuid(), UserInfo{ "frank", false });
 
@@ -178,7 +181,25 @@ void ClientPacketTest::roomAcquiredEmitsPacket()
     QCOMPARE(emittedPacket.roomInfo.roomType, packet.roomInfo.roomType);
     QCOMPARE(emittedPacket.roomInfo.roomId, packet.roomInfo.roomId);
     QCOMPARE(emittedPacket.roomInfo.roomName, packet.roomInfo.roomName);
+    QCOMPARE(emittedPacket.roomInfo.creatorId, packet.roomInfo.creatorId);
     QCOMPARE(emittedPacket.roomInfo.userInfos.size(), packet.roomInfo.userInfos.size());
+}
+
+void ClientPacketTest::roomDeletedEmitsPacket()
+{
+    Client client;
+    RoomDeletedPacket emittedPacket;
+    int emitCount = 0;
+    connect(&client, &Client::roomDeleted, this, [&](const RoomDeletedPacket &packet) {
+        emittedPacket = packet;
+        ++emitCount;
+    });
+
+    const RoomDeletedPacket packet{ QUuid::createUuid() };
+
+    QVERIFY(processPacket(client, makePayload(PacketType::RoomDeleted, packet)));
+    QCOMPARE(emitCount, 1);
+    QCOMPARE(emittedPacket.roomId, packet.roomId);
 }
 
 QTEST_MAIN(ClientPacketTest)
