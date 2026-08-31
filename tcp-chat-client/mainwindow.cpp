@@ -281,6 +281,7 @@ void MainWindow::addGroupCategoryButton()
         " border-radius: %1px;"
         " background: #f4f4f4;"
         " font-weight: bold;"
+        " padding-bottom: 1px;"
         "}"
         "QToolButton:hover {"
         " background: #e8e8e8;"
@@ -355,7 +356,6 @@ void MainWindow::onRoomAcquired(const RoomInfoPacket &roomInfoPacket) {
 void MainWindow::onRoomStatusChanged() {
     qInfo() << Q_FUNC_INFO;
     ui->roomView->viewport()->update();
-    qInfo() << Q_FUNC_INFO << "finished";
 }
 
 void MainWindow::onItemMoved(QStandardItem *item) {
@@ -631,6 +631,7 @@ void MainWindow::updateGUIAtSwitch(const QModelIndex &index, std::shared_ptr<Cha
     updateChatRoomLabel(&index);
     // chat box
     ui->chatbox->setModel(m_application->getChatModel());
+    ui->roomView->setCurrentIndex(index);
 
     // debug info
     auto *sm = ui->roomView->selectionModel();

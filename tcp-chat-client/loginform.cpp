@@ -41,6 +41,7 @@ void LoginForm::onClientConnected() {
     settings.setValue(LastServerPortKey, ui->spboxPort->value());
 
     if (!requestLoginInfo()) {
+        m_application->disconnectFromHost();
         ui->btnConnect->setDisabled(false);
     }
 }

@@ -146,15 +146,16 @@ void Server::broadcast(ChatMessagePacket& packet) {
 void Server::incomingConnection(qintptr handle) {
     // create the client
     auto client = new Client(nullptr, handle);
-    client->start();
+
+    //connect the signals before starting the socket since in principle, events can begin arriving once the descriptor has been assigned.
+    connect(client, &Client::disconnected, this, &Server::handleClientDisconnected);
+    connect(client, &Client::dataReceived, this, &Server::onDataReceived);
 
     // add the client socket to the client list.
     client->setClientId(QUuid::createUuid());
     m_clients.insert(client->getClientId(), client);
 
-    connect(client, &Client::disconnected, this, &Server::handleClientDisconnected);
-    connect(client, &Client::dataReceived, this, &Server::onDataReceived);
-
+    client->start();
     // update GUI
     emit clientChanged();
 }

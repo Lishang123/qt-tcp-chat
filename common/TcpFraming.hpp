@@ -8,13 +8,29 @@
 // messages. Every application payload is therefore prefixed with its size.
 namespace TcpFraming {
 
+    /**
+     * @brief Number of bytes used to encode the payload length prefix.
+     */
     constexpr int HeaderSize = sizeof(quint32);
 
-    // set a security safeguard 16MB to prevent memory exhaustion attacks and DoS vulnerabilities.
+    /**
+     * @brief Maximum accepted payload size in bytes.
+     *
+     * This safeguards the receiver from oversized frames that could exhaust
+     * memory or be used for denial-of-service attempts.
+     */
     constexpr quint32 MaxPayloadSize = 16 * 1024 * 1024;
 
+    /**
+     * @brief Result of trying to extract one complete framed payload.
+     */
     enum class ReadResult { Incomplete, Complete, Invalid };
 
+    /**
+     * @brief Prefixes a payload with its big-endian length header.
+     * @param payload Serialized application payload.
+     * @return Framed payload, or an empty byte array if the payload is too large.
+     */
     inline QByteArray frame(const QByteArray &payload) {
         if (payload.size() > static_cast<qsizetype>(MaxPayloadSize)) {
             return {};
@@ -26,6 +42,13 @@ namespace TcpFraming {
         return framedPayload;
     }
 
+    /**
+     * @brief Extracts the next complete payload from a receive buffer.
+     * @param buffer Accumulated TCP bytes; consumed when a frame is completed.
+     * @param payload Destination for the extracted application payload.
+     * @return Complete when a frame was extracted, Incomplete when more bytes
+     *         are required, or Invalid when the frame header is unsafe.
+     */
     inline ReadResult takeNextFrame(QByteArray &buffer, QByteArray &payload) {
         if (buffer.size() < HeaderSize) {
             return ReadResult::Incomplete;
