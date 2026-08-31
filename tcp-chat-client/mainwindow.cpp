@@ -630,6 +630,7 @@ void MainWindow::updateGUIAtSwitch(const QModelIndex &index, std::shared_ptr<Cha
     updateChatRoomLabel(&index);
     // chat box
     ui->chatbox->setModel(m_application->getChatModel());
+    ui->roomView->setCurrentIndex(index);
 
     // debug info
     auto *sm = ui->roomView->selectionModel();
