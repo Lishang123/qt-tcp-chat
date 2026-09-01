@@ -20,6 +20,8 @@ private slots:
     void getRoomMembersReturnsChatGroupUsers();
     void addChatGroupFromRoomInfoStoresMembers();
     void setRoomIdOnUserWorksAfterUserLogsOut();
+    void setRoomIdOnUserDoesNotMarkUnreadWithoutMessage();
+    void processMessageMarksUnreadForNewDirectRoom();
 };
 
 void GroupCreationTest::createChatGroupRequestRejectsMissingInput()
@@ -176,6 +178,46 @@ void GroupCreationTest::setRoomIdOnUserWorksAfterUserLogsOut()
 
     QVERIFY(application.setRoomIdOnUser(directRoomId, userId, false));
     QCOMPARE(application.getUserItem(userId)->data(RoomIdRole).toUuid(), directRoomId);
+}
+
+void GroupCreationTest::setRoomIdOnUserDoesNotMarkUnreadWithoutMessage()
+{
+    Application application;
+    const QUuid userId = QUuid::createUuid();
+    const QUuid directRoomId = QUuid::createUuid();
+
+    application.addRoomItem(QUuid(), userId, RoomType::DirectChat, UserInfo{ "alice", true });
+
+    QVERIFY(application.setRoomIdOnUser(directRoomId, userId, false));
+    auto *userItem = application.getUserItem(userId);
+    QVERIFY(userItem != nullptr);
+    QCOMPARE(userItem->data(RoomIdRole).toUuid(), directRoomId);
+    QVERIFY(!userItem->data(UnreadRole).toBool());
+}
+
+void GroupCreationTest::processMessageMarksUnreadForNewDirectRoom()
+{
+    Application application;
+    const QUuid userId = QUuid::createUuid();
+    const QUuid directRoomId = QUuid::createUuid();
+
+    application.addRoomItem(QUuid(), userId, RoomType::DirectChat, UserInfo{ "alice", true });
+
+    ChatMessagePacket packet;
+    packet.roomId = directRoomId;
+    packet.senderId = userId;
+    packet.senderName = "alice";
+    packet.messageId = QUuid::createUuid();
+    packet.timestamp = QDateTime(QDate(2026, 8, 27), QTime(20, 0));
+    packet.text = "hello";
+    packet.outgoing = false;
+
+    application.processMessage(packet);
+
+    auto *userItem = application.getUserItem(userId);
+    QVERIFY(userItem != nullptr);
+    QCOMPARE(userItem->data(RoomIdRole).toUuid(), directRoomId);
+    QVERIFY(userItem->data(UnreadRole).toBool());
 }
 
 QTEST_MAIN(GroupCreationTest)

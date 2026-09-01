@@ -246,7 +246,6 @@ bool Application::setRoomIdOnUser(const QUuid &roomId, const QUuid &userId, bool
                 item->setData(roomId, RoomIdRole);
                 if (switchRoomLater)
                     return switchRoom(item->index()) != nullptr;
-                setUnreadBadge(item, true);
                 return true;
             }
         }
@@ -268,6 +267,7 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
         //all received message without room should be from a friend: aka type direct chat
         createRoom(targetRoomId, roomName, RoomType::DirectChat);
     }
+    //unread badges are only set here!
     addChatMessage(targetRoomId, chatMessagePacket);
 
     // move room upward under user
@@ -279,7 +279,7 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
     }
     auto parent = roomItem->parent();
     //TODO: really need a QAbstractItemModel for moving rows (considering pinned rooms).
-    parent->insertRow(1, parent->takeRow(roomItem->row()));
+    parent->insertRow(qMin(1, parent->rowCount() - 1), parent->takeRow(roomItem->row()));
 }
 
 std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {

@@ -4,12 +4,25 @@
 #include "ChatHistoryManager.hpp"
 #include "ui_loginform.h"
 
+#include <QSettings>
+
+namespace {
+constexpr auto SettingsOrganization = "qt-tcp-chat";
+constexpr auto SettingsApplication = "tcp-chat-client";
+constexpr auto LastServerAddressKey = "connection/lastServerAddress";
+constexpr auto LastServerPortKey = "connection/lastServerPort";
+constexpr auto LastUsernameKey = "login/lastUsername";
+}
+
 LoginForm::LoginForm(Application* application, QWidget *parent)
     :m_application(application),
     QDialog(parent),
     ui(new Ui::LoginForm)
 {
     ui->setupUi(this);
+    QSettings settings(SettingsOrganization, SettingsApplication);
+    ui->textServer->setText(settings.value(LastServerAddressKey, ui->textServer->text()).toString());
+    ui->spboxPort->setValue(settings.value(LastServerPortKey, 3000).toUInt());
     connect(&m_application->getClient(), &Client::connected, this, &LoginForm::onClientConnected);
     connect(&m_application->getClient(), &Client::loggedIn, this, &LoginForm::onClientLoggedIn);
     connect(&m_application->getClient(), &Client::errorOccured, this, &LoginForm::onError);
@@ -23,7 +36,12 @@ LoginForm::~LoginForm()
 
 void LoginForm::onClientConnected() {
     qInfo() << Q_FUNC_INFO;
+    QSettings settings(SettingsOrganization, SettingsApplication);
+    settings.setValue(LastServerAddressKey, ui->textServer->text().trimmed());
+    settings.setValue(LastServerPortKey, ui->spboxPort->value());
+
     if (!requestLoginInfo()) {
+        m_application->disconnectFromHost();
         ui->btnConnect->setDisabled(false);
     }
 }
@@ -51,7 +69,7 @@ void LoginForm::on_btnConnect_clicked()
     auto port = static_cast<quint16>(ui->spboxPort->value());
     //disable all buttons so that the user doesn't click anything in between
     ui->btnConnect->setDisabled(true);
-    m_application->connectToServer(ui->textServer->text(), port);
+    m_application->connectToServer(ui->textServer->text().trimmed(), port);
 }
 
 
@@ -62,6 +80,7 @@ void LoginForm::onError(const QString &errorMessage) {
 
 bool LoginForm::requestLoginInfo() {
     qInfo() << Q_FUNC_INFO;
+    QSettings settings(SettingsOrganization, SettingsApplication);
     while (true) {
         bool ok{};
         QString username = QInputDialog::getText(
@@ -69,17 +88,18 @@ bool LoginForm::requestLoginInfo() {
         "Name", //title
         "What is your name?",//label text inside the dialog
         QLineEdit::EchoMode::Normal, //show typed text normally
-        m_application->getClient().getUserName(), // The pre-filled text inside the input field.
+        settings.value(LastUsernameKey, m_application->getClient().getUserName()).toString(), // The pre-filled text inside the input field.
         &ok);
         if (!ok)
             return false;
         qInfo() << "username: " << username;
+        username = username.trimmed();
         if (username.isEmpty()){
             QMessageBox::critical(this, "Error", "Please enter a valid name!");
             continue;
         }
+        settings.setValue(LastUsernameKey, username);
         m_application->sendLoginRequest(LoginRequestPacket{username, 0, "password"});
         return true;
     }
 }
-
