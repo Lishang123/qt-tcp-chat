@@ -201,6 +201,15 @@ void GroupCreationTest::processMessageMarksUnreadForNewDirectRoom()
     const QUuid userId = QUuid::createUuid();
     const QUuid directRoomId = QUuid::createUuid();
 
+    const QUuid currentUserId = QUuid::createUuid();
+    application.setUserId(currentUserId);
+
+    application.addRoomItem(
+        currentUserId,
+        currentUserId,
+        RoomType::Self,
+        UserInfo{ "me", true });
+
     application.addRoomItem(QUuid(), userId, RoomType::DirectChat, UserInfo{ "alice", true });
 
     ChatMessagePacket packet;

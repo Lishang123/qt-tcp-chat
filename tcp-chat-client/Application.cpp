@@ -261,16 +261,17 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
         qInfo() << Q_FUNC_INFO << "add new RoomId " << chatMessagePacket.roomId;
         QString roomName = (targetRoomId == m_publicRoomId ? "public" : chatMessagePacket.senderName);
 
-        if (roomName != "public") { // this should not happen since public room should be added at login success
+        if (roomName != "public") { // room name should not be public since public room should be added at login success
             setRoomIdOnUser(targetRoomId, chatMessagePacket.senderId, false);
         }
         //all received message without room should be from a friend: aka type direct chat
         createRoom(targetRoomId, roomName, RoomType::DirectChat);
     }
-    //unread badges are only set here!
+    //this is the only place where unread badges are set!
     addChatMessage(targetRoomId, chatMessagePacket);
 
     // move room upward under user
+	// if targetRoomId is the current room, the user's own room, or the public room, do not move it
     if (targetRoomId == m_currentRoomId || targetRoomId == getUserId() || targetRoomId == m_publicRoomId) return;
     auto roomItem = getRoomItem(targetRoomId);
     if (!roomItem) {
@@ -279,7 +280,8 @@ void Application::processMessage(const ChatMessagePacket &chatMessagePacket) {
     }
     auto parent = roomItem->parent();
     //TODO: really need a QAbstractItemModel for moving rows (considering pinned rooms).
-    parent->insertRow(qMin(1, parent->rowCount() - 1), parent->takeRow(roomItem->row()));
+    //const int destinationRow = qMin(1, parent->rowCount() - 1
+    parent->insertRow(1, parent->takeRow(roomItem->row()));
 }
 
 std::shared_ptr<ChatRoom> Application::switchRoom(const QModelIndex &index) {
